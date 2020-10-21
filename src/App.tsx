@@ -1,26 +1,22 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import NodeCanvas from "./View/NodeCanvas";
+import NodeProps from "./Props/NodeProps";
+import Source_CSV_Node from "./View/Nodes/SourceCSV";
+import Filter from "./View/Nodes/Filter";
+import NodeCanvasProp from "./Props/NodeCanvasProp";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const nodes: NodeProps[] = [
+        new Source_CSV_Node(10, 10),
+        new Filter(100, 80)
+    ];
+
+    let canvas: NodeCanvasProp = {nodes: nodes};
+
+    return (
+        <NodeCanvas {...canvas}/>
+    );
 }
 
 export default App;

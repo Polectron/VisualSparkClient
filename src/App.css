@@ -1,38 +1,125 @@
-.App {
-  text-align: center;
+#svg_canvas {
+    border: 1px black solid;
+    border-radius: 5px;
+    height: 800px;
+    width: 100%;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+#container {
+    /*position: absolute;*/
+    /*border: 1px black solid;*/
+    /*border-radius: 5px;*/
+    /*width: 1500px;*/
+    /*height: 800px;*/
+    /*top: 50px;*/
+    /*left: 50px;*/
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.container{
+    max-width: 100%;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.node_block {
+    background-color: lightgray;
+    border-radius: 5px;
+    position: absolute;
+    user-select: none;
+    padding: 10px;
 }
 
-.App-link {
-  color: #61dafb;
+.source, .btn-source {
+    background-color: #72afde;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.filter, .btn-filter {
+    background-color: #ffb932;
+}
+
+.aggr, .btn-aggr {
+    background-color: #b18ffc;
+}
+
+.output, .btn-output {
+    background-color: #56d963;
+}
+
+.source:hover, .btn-source:hover {
+    background-color: #80beee;
+}
+
+.filter:hover, .btn-filter:hover {
+    background-color: #fdc860;
+}
+
+.aggr:hover, .btn-aggr:hover {
+    background-color: #c1a7fa;
+}
+
+.output:hover, .btn-output:hover {
+    background-color: #8ae093;
+}
+
+.nd_title {
+    font-weight: bold;
+    padding: 5px;
+}
+
+.nd_container {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.nd_inputs {
+    position: relative;
+    left: -20px;
+    top: 10px;
+}
+
+.nd_input {
+    display: grid;
+    grid-template-areas: "anchor name";
+}
+
+.nd_input_name {
+    grid-area: name;
+}
+
+.nd_input_anchor {
+    grid-area: anchor;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: lightgreen;
+    margin-bottom: 15px;
+}
+
+.nd_outputs {
+    position: relative;
+    right: -20px;
+    top: 10px;
+}
+
+.nd_output {
+    display: grid;
+    grid-template-areas: "name anchor";
+}
+
+.nd_output_name {
+    grid-area: name;
+}
+
+.nd_output_anchor {
+    grid-area: anchor;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: lightgreen;
+    margin-bottom: 15px;
+}
+
+.nd_controls{
+}
+
+.nd_input_anchor:hover, .nd_output_anchor:hover {
+    background-color: #aef4ae;
 }
