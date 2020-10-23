@@ -100,7 +100,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             this.websocket.close();
         }
 
-        this.websocket = new WebSocket(`ws://${this.state.sparkServer}`, []);
+        this.websocket = new WebSocket(`wss://${this.state.sparkServer}`, []);
 
         this.websocket.onerror = (e: any) => {
             this.setState({
@@ -247,33 +247,31 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                 </div>
                 <Container>
                     <Row>
-                        <Col xs={2}>
+                        <Col style={{marginBottom: "15px"}}>
+                            <ButtonGroup aria-label="Basic example">
+                                <OverlayTrigger
+                                    key={"run"}
+                                    placement={"top"}
+                                    overlay={
+                                        <Tooltip id={`tooltip-top`}>
+                                            {this.state.sparkServer}
+                                        </Tooltip>
+                                    }
+                                >
+                                    <Button disabled={!this.state.canExecute} onClick={this.runCode} variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
+                                </OverlayTrigger>
+                                <DropdownButton className="d-none d-lg-block" as={ButtonGroup} title={<Icon.Save></Icon.Save>}
+                                                id="bg-nested-dropdown">
+                                    <Dropdown.Item eventKey="1">Guardar</Dropdown.Item>
+                                    <Dropdown.Item eventKey="2">Guardar Como</Dropdown.Item>
+                                </DropdownButton>
+                                <Button onClick={() => this.setState({modalShow: true})} variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
+                            </ButtonGroup>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col className="d-none d-lg-block" lg={2}>
                             <Row>
-                                <Col>
-                                    <ButtonGroup aria-label="Basic example">
-                                        <OverlayTrigger
-                                            key={"run"}
-                                            placement={"top"}
-                                            overlay={
-                                                <Tooltip id={`tooltip-top`}>
-                                                    {this.state.sparkServer}
-                                                </Tooltip>
-                                            }
-                                        >
-                                            <Button disabled={!this.state.canExecute} onClick={this.runCode} variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
-                                        </OverlayTrigger>
-                                        <DropdownButton as={ButtonGroup} title={<Icon.Save></Icon.Save>}
-                                                        id="bg-nested-dropdown">
-                                            <Dropdown.Item eventKey="1">Guardar</Dropdown.Item>
-                                            <Dropdown.Item eventKey="2">Guardar Como</Dropdown.Item>
-                                        </DropdownButton>
-                                    </ButtonGroup>
-                                </Col>
-                                <Col xs={4}>
-                                    <Button onClick={() => this.setState({modalShow: true})} variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
-                                </Col>
-                            </Row>
-                            <Row style={{marginTop: "20px"}}>
                                 <Col>
                                     <Accordion defaultActiveKey="0">
                                         <Card>
@@ -408,13 +406,13 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                                 </Col>
                             </Row>
                         </Col>
-                        <Col>
+                        <Col className="d-none d-lg-block">
                             <div ref={this.ref} onMouseMove={this._onMouseMove} >
                                 {this.state.nodes}
                                 <SVGCanvas lines={this.state.lines}></SVGCanvas>
                             </div>
                         </Col>
-                        <Col xs={3}>
+                        <Col lg={3}>
                             <Card>
                                 <Card.Body>
                                     <Card.Title>Sin salidas</Card.Title>
