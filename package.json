@@ -24,7 +24,7 @@
     "react-dom": "^16.13.1",
     "react-draggable": "^4.4.3",
     "react-feather": "^2.0.8",
-    "react-scripts": "3.4.3",
+    "react-scripts": "^3.4.4",
     "typescript": "^3.7.5",
     "ws": "^7.3.1"
   },
