@@ -1,9 +1,13 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import App from './App';
+import * as Icon from "react-feather";
+import Filter from './View/Nodes/Filter';
+import NodeTemplate from "./View/Nodes/NodeTemplate";
 
-test('renders learn react link', () => {
-  const { getByText } = render(<App />);
-  const linkElement = getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('render filter node', () => {
+  let filter = new Filter(0,0);
+  const { getByText } = render(<NodeTemplate {...filter}></NodeTemplate> );
+  const typeName = getByText(/Filtro/i);
+  expect(typeName).toBeInTheDocument();
 });
