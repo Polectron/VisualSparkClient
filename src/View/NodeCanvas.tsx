@@ -20,6 +20,9 @@ import Accordion from "react-bootstrap/Accordion";
 import Aggregation from "./Nodes/Aggregation";
 import Subtract from "./Nodes/Subtract";
 import TableNode from "./Nodes/TableNode";
+import Modal from "react-bootstrap/Modal";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
 
 interface IState {
     selectedAnchors: any[],
@@ -30,12 +33,74 @@ interface IState {
     mouseMoved: boolean,
     currentLine: SVGLineProp | null,
     canExecute: boolean,
-    executeVariant: string
+    executeVariant: string,
+    modalShow: boolean,
+    sparkServer: string,
+    sparkLimit: number
 }
 
 function NodeButton(props: any) {
-    return <Button style={{marginBottom: "10px"}} variant={props.class}
+    return <Button style={{margin: "10px"}} variant={props.class}
                    onClick={props.onClick.bind(null, props.type)}>{props.icon} {props.name}</Button>;
+}
+
+class SettingsModal extends React.Component<any, any>{
+
+    constructor(props: any) {
+        super(props);
+        this.state = { sparkServer: props.sparkServer, sparkLimit: props.sparkLimit };
+    }
+
+    onSave = (e: any) => {
+        e.preventDefault();
+        this.props.onSave(this.state);
+        this.props.onHide();
+    }
+
+    onChange = (e: any) => {
+        this.setState({ sparkServer: e.target.value });
+    };
+
+    onChangeLimit = (e: any) => {
+        this.setState({ sparkLimit: e.target.value });
+    };
+
+    render() {
+        return (
+                <Modal
+                    {...this.props}
+                    size="lg"
+                    aria-labelledby="contained-modal-title-vcenter"
+                    centered
+                >
+                    <form onSubmit={this.onSave}>
+                        <Modal.Header closeButton>
+                            <Modal.Title id="contained-modal-title-vcenter">
+                                Configuración
+                            </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Container>
+                                <Row>
+                                    <Col>
+                                        Servidor Spark: <input type="text" value={this.state.sparkServer} onChange={this.onChange} />
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        Límite consulta: <input type="number" value={this.state.sparkLimit} onChange={this.onChangeLimit} />
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="primary" type="submit">Guardar</Button> <Button variant={"secondary"}
+                                                                                                      onClick={this.props.onHide}>Cancelar</Button>
+                        </Modal.Footer>
+                    </form>
+                </Modal>
+        );
+    }
 }
 
 class NodeCanvas extends Component<NodeCanvasProp, IState> {
@@ -51,6 +116,17 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
 
         this.ref = React.createRef();
 
+        let sparkServer = localStorage.getItem("sparkServer");
+        if(sparkServer === null){
+            sparkServer = ""
+        }
+        let sparkLimit = Number(localStorage.getItem("sparkLimit"));
+        if(sparkLimit === null){
+            sparkLimit = 1000
+        }
+
+        this.websocket = null;
+
         this.state = {
             selectedAnchors: [],
             lines: [],
@@ -60,12 +136,27 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             mouseMoved: false,
             currentLine: null,
             canExecute: false,
-            executeVariant: "secondary"
+            executeVariant: "secondary",
+            modalShow: false,
+            sparkServer: sparkServer,
+            sparkLimit: sparkLimit
         }
     }
 
-    componentDidMount() {
-        this.websocket = new WebSocket("ws://192.168.0.112:8765/", []);
+    componentDidMount = () => {
+        this.connectWebSocket();
+    }
+
+    connectWebSocket = () => {
+        if(this.state.sparkServer === ""){
+            return 0;
+        }
+
+        if(this.websocket !== null) {
+            this.websocket.close();
+        }
+
+        this.websocket = new WebSocket(`ws://${this.state.sparkServer}`, []);
 
         this.websocket.onerror = (e: any) => {
             this.setState({
@@ -86,8 +177,21 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         }
     }
 
+    componentDidUpdate(prevProps: any, prevState: any){
+        if(prevState.sparkServer !== this.state.sparkServer) {
+            console.log(this.state.sparkServer);
+            this.connectWebSocket();
+        }
+    }
+
+    onSettingsSave = (data: any) => {
+        this.setState({canExecute: false, executeVariant: "secondary", ...data});
+        localStorage.setItem("sparkLimit", data.sparkLimit);
+        localStorage.setItem("sparkServer", data.sparkServer);
+    }
+
     runCode = () => {
-        this.websocket.send(JSON.stringify({action: "query", tree: {}}));
+        this.websocket.send(JSON.stringify({action: "query", tree: {}, limit: this.state.sparkLimit}));
     }
 
     handleAnchorClick = (anchor: any, e: any) => {
@@ -125,9 +229,6 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         this.setState({
             selectedAnchors: anchors,
             lines: tmp,
-            nodes: this.state.nodes,
-            mouseX: this.state.mouseX,
-            mouseY: this.state.mouseY,
             mouseMoved: false,
             currentLine: line
         });
@@ -159,13 +260,8 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         node.anchorClickCallback = this.handleAnchorClick;
         tmp.push(<NodeTemplate {...node}></NodeTemplate>);
         this.setState({
-            selectedAnchors: this.state.selectedAnchors,
-            lines: this.state.lines,
             nodes: tmp,
-            mouseX: this.state.mouseX,
-            mouseY: this.state.mouseY,
             mouseMoved: false,
-            currentLine: this.state.currentLine
         });
     }
 
@@ -186,9 +282,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         }
 
         this.setState({
-            selectedAnchors: this.state.selectedAnchors,
             lines: tmp,
-            nodes: this.state.nodes,
             mouseX: x,
             mouseY: y,
             mouseMoved: true,
@@ -213,13 +307,26 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                             <Row>
                                 <Col>
                                     <ButtonGroup aria-label="Basic example">
-                                        <Button disabled={!this.state.canExecute} onClick={this.runCode} variant={this.state.executeVariant}><Icon.Play></Icon.Play> Ejecutar</Button>
+                                        <OverlayTrigger
+                                            key={"run"}
+                                            placement={"top"}
+                                            overlay={
+                                                <Tooltip id={`tooltip-top`}>
+                                                    {this.state.sparkServer}
+                                                </Tooltip>
+                                            }
+                                        >
+                                            <Button disabled={!this.state.canExecute} onClick={this.runCode} variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
+                                        </OverlayTrigger>
                                         <DropdownButton as={ButtonGroup} title={<Icon.Save></Icon.Save>}
                                                         id="bg-nested-dropdown">
                                             <Dropdown.Item eventKey="1">Guardar</Dropdown.Item>
                                             <Dropdown.Item eventKey="2">Guardar Como</Dropdown.Item>
                                         </DropdownButton>
                                     </ButtonGroup>
+                                </Col>
+                                <Col xs={4}>
+                                    <Button onClick={() => this.setState({modalShow: true})} variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
                                 </Col>
                             </Row>
                             <Row style={{marginTop: "20px"}}>
@@ -233,6 +340,21 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                                             </Card.Header>
                                             <Accordion.Collapse eventKey="0">
                                                 <Card.Body>
+                                                    <NodeButton onClick={this.addNode} type={"Source_JDBC_Node"}
+                                                                class={"source"}
+                                                                name={"Fuente JDBC"}
+                                                                icon={
+                                                                    <Icon.Database></Icon.Database>}></NodeButton>
+                                                    <NodeButton onClick={this.addNode} type={"Source_MONGODB_Node"}
+                                                                class={"source"}
+                                                                name={"Fuente MongoDB"}
+                                                                icon={
+                                                                    <Icon.Database></Icon.Database>}></NodeButton>
+                                                    <NodeButton onClick={this.addNode} type={"Source_JSON_Node"}
+                                                                class={"source"}
+                                                                name={"Fuente JSON"}
+                                                                icon={
+                                                                    <Icon.Database></Icon.Database>}></NodeButton>
                                                     <NodeButton onClick={this.addNode} type={"Source_CSV_Node"}
                                                                 class={"source"}
                                                                 name={"Fuente CSV"}
@@ -361,6 +483,13 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                         </Col>
                     </Row>
                 </Container>
+                <SettingsModal
+                    sparkLimit={this.state.sparkLimit}
+                    sparkServer={this.state.sparkServer}
+                    show={this.state.modalShow}
+                    onHide={() => this.setState({modalShow: false})}
+                    onSave={this.onSettingsSave}
+                />
             </>
         );
     }
