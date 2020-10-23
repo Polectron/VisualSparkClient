@@ -20,9 +20,10 @@ import Accordion from "react-bootstrap/Accordion";
 import Aggregation from "./Nodes/Aggregation";
 import Subtract from "./Nodes/Subtract";
 import TableNode from "./Nodes/TableNode";
-import Modal from "react-bootstrap/Modal";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
+import SettingsModal from "./Modals/SettingsModal";
+import QueriesModal from "./Modals/QueriesModal";
 
 interface IState {
     selectedAnchors: any[],
@@ -35,6 +36,7 @@ interface IState {
     canExecute: boolean,
     executeVariant: string,
     modalShow: boolean,
+    modalQueriesShow: boolean,
     sparkServer: string,
     sparkLimit: number
 }
@@ -42,65 +44,6 @@ interface IState {
 function NodeButton(props: any) {
     return <Button style={{margin: "10px"}} variant={props.class}
                    onClick={props.onClick.bind(null, props.type)}>{props.icon} {props.name}</Button>;
-}
-
-class SettingsModal extends React.Component<any, any>{
-
-    constructor(props: any) {
-        super(props);
-        this.state = { sparkServer: props.sparkServer, sparkLimit: props.sparkLimit };
-    }
-
-    onSave = (e: any) => {
-        e.preventDefault();
-        this.props.onSave(this.state);
-        this.props.onHide();
-    }
-
-    onChange = (e: any) => {
-        this.setState({ sparkServer: e.target.value });
-    };
-
-    onChangeLimit = (e: any) => {
-        this.setState({ sparkLimit: e.target.value });
-    };
-
-    render() {
-        return (
-                <Modal
-                    {...this.props}
-                    size="lg"
-                    aria-labelledby="contained-modal-title-vcenter"
-                    centered
-                >
-                    <form onSubmit={this.onSave}>
-                        <Modal.Header closeButton>
-                            <Modal.Title id="contained-modal-title-vcenter">
-                                Configuración
-                            </Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <Container>
-                                <Row>
-                                    <Col>
-                                        Servidor Spark: <input type="text" value={this.state.sparkServer} onChange={this.onChange} />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col>
-                                        Límite consulta: <input type="number" value={this.state.sparkLimit} onChange={this.onChangeLimit} />
-                                    </Col>
-                                </Row>
-                            </Container>
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="primary" type="submit">Guardar</Button> <Button variant={"secondary"}
-                                                                                                      onClick={this.props.onHide}>Cancelar</Button>
-                        </Modal.Footer>
-                    </form>
-                </Modal>
-        );
-    }
 }
 
 class NodeCanvas extends Component<NodeCanvasProp, IState> {
@@ -138,6 +81,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             canExecute: false,
             executeVariant: "secondary",
             modalShow: false,
+            modalQueriesShow: false,
             sparkServer: sparkServer,
             sparkLimit: sparkLimit
         }
@@ -298,7 +242,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                     className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                     <h5 className="my-0 mr-md-auto font-weight-normal">VisualSpark</h5>
                     <nav className="my-2 my-md-0 mr-md-3">
-                        <a className="p-2" href="#">Explorar consultas</a>
+                        <Button className="p-2" onClick={() => this.setState({modalQueriesShow: true})}>Explorar consultas</Button>
                     </nav>
                 </div>
                 <Container>
@@ -489,6 +433,10 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                     show={this.state.modalShow}
                     onHide={() => this.setState({modalShow: false})}
                     onSave={this.onSettingsSave}
+                />
+                <QueriesModal
+                    show={this.state.modalQueriesShow}
+                    onHide={() => this.setState({modalQueriesShow: false})}
                 />
             </>
         );
