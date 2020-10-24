@@ -100,13 +100,14 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             this.websocket.close();
         }
 
-        this.websocket = new WebSocket(`wss://${this.state.sparkServer}`, []);
+        this.websocket = new WebSocket(`ws://${this.state.sparkServer}`, []);
 
         this.websocket.onerror = (e: any) => {
             this.setState({
                 executeVariant: "danger",
                 canExecute: false
             });
+            console.error(e);
         }
 
         this.websocket.onmessage = (e: any) => {
