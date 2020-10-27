@@ -38,7 +38,8 @@ interface IState {
     modalShow: boolean,
     modalQueriesShow: boolean,
     sparkServer: string,
-    sparkLimit: number
+    sparkLimit: number,
+    savedQueries: string[]
 }
 
 function NodeButton(props: any) {
@@ -67,6 +68,17 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         if(sparkLimit === null){
             sparkLimit = 1000
         }
+        let savedQueriesjson = localStorage.getItem("savedQueries");
+        if(savedQueriesjson === null){
+            savedQueriesjson = '[{"name":"Example 1", "img": "No-image-available.png", "tree": {}},' +
+                ' {"name":"Example 2", "img":"No-image-available.png", "tree": {}},' +
+                ' {"name":"Example 3", "img": "No-image-available.png", "tree": {}},' +
+                ' {"name":"Example 1", "img": "No-image-available.png", "tree": {}},' +
+                ' {"name":"Example 2", "img": "No-image-available.png", "tree": {}}]'
+        }
+        let savedQueries = JSON.parse(savedQueriesjson);
+
+        console.log(savedQueries);
 
         this.websocket = null;
 
@@ -83,7 +95,8 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             modalShow: false,
             modalQueriesShow: false,
             sparkServer: sparkServer,
-            sparkLimit: sparkLimit
+            sparkLimit: sparkLimit,
+            savedQueries: savedQueries
         }
     }
 
@@ -434,6 +447,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                     onSave={this.onSettingsSave}
                 />
                 <QueriesModal
+                    savedQueries={this.state.savedQueries}
                     show={this.state.modalQueriesShow}
                     onHide={() => this.setState({modalQueriesShow: false})}
                 />
