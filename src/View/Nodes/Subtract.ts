@@ -1,10 +1,11 @@
-import NodeProps from "../../Props/NodeProps";
+import NodeProps from "../../Props/NodeProp";
+import AnchorProp from "../../Props/AnchorProp";
 
 class Subtract extends NodeProps{
     constructor(x: number, y: number) {
         super(x, y, "Substraer", "filter");
-        this.inputs = [{type:"DataFrame", name:"DataFrame", parent: this}, {type:"DataFrame", name:"DataFrame", parent: this}];
-        this.outputs = [{type:"DataFrame", name:"DataFrame", parent: this}]
+        this.inputs = [new AnchorProp("DataFrame", "DataFrame", this), new AnchorProp("DataFrame", "DataFrame", this)];
+        this.outputs = [new AnchorProp("DataFrame", "DataFrame", this)]
     }
 }
 

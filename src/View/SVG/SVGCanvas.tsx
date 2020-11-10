@@ -3,16 +3,17 @@ import SVGLine from "./SVGLine";
 import SVGLineProp from "../../Props/SVGLineProp";
 
 type SVGCanvasProp = {
-    lines: SVGLineProp[]
+    lines: SVGLineProp[],
+    breakSVGLine: any
 }
 
 function SVGCanvas(prop : SVGCanvasProp){
 
     var lines = [];
-    lines = prop.lines.map(l => <SVGLine x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}/>);
+    lines = prop.lines.map(l => <SVGLine {...l}/>);
 
     return (
-        <svg onMouseMove={(e)=>e.preventDefault()} id={"svg_canvas"}>
+        <svg onMouseMove={(e)=>e.preventDefault()} onClick={prop.breakSVGLine} id={"svg_canvas"}>
             {lines}
         </svg>
     );

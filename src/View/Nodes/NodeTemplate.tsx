@@ -1,86 +1,179 @@
-import React, {Component, useRef} from 'react';
-import NodeProps from "../../Props/NodeProps";
+import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
 import Draggable from "react-draggable";
 import * as Icon from "react-feather";
-import InputProp from "../../Props/InputProp";
-import OutputProp from "../../Props/OutputProp";
-import NodeControls from "./Controls/NodeControl";
+import AnchorProp from "../../Props/AnchorProp";
 import {ContextMenu, MenuItem, showMenu} from "react-contextmenu";
+import NodeProp from "../../Props/NodeProp";
+import SVGLineProp from "../../Props/SVGLineProp";
+import TextControl from "./Controls/TextControl";
 
+class AnchorPoint extends React.Component<AnchorProp, any> {
+    public ref: any;
 
-const { randomInt } = require('mathjs');
+    constructor(props: AnchorProp) {
+        super(props);
+        this.ref = React.createRef();
+    }
 
-function InputTemplate(prop: InputProp) {
+    public updateLines = () => {
+        // @ts-ignore
+        let anchorBounds = ReactDOM.findDOMNode(this).getBoundingClientRect();
+        let canvasBounds = this.props.canvas.current.getBoundingClientRect();
 
-    const ref = useRef(null);
+        this.props.lines.forEach((l) => {
+            let x = anchorBounds.left - canvasBounds.left + 10;
+            let y = anchorBounds.top - canvasBounds.top + 10;
 
-    return (
-        <div className="nd_input">
-            <div ref={ref} className="nd_input_anchor" onClick={()=>{prop.anchorClickCallback(prop, ref.current)}}></div>
-        </div>
-    );
+            if (l.anchorOne === this.props) {
+                l.x1 = x;
+                l.y1 = y;
+            } else if (l.anchorTwo === this.props) {
+                l.x2 = x;
+                l.y2 = y;
+            }
+        })
+    }
+
+    public addLine = (line: SVGLineProp) => {
+        this.props.lines.push(line);
+    }
 }
 
-function OutputTemplate(prop: OutputProp) {
-
-    const ref = useRef(null);
-
-    return (
-        <div className="nd_output">
-            <div ref={ref} className="nd_output_anchor" onClick={()=>{prop.anchorClickCallback(prop, ref.current)}}></div>
-        </div>
-    );
+class InputTemplate extends AnchorPoint {
+    render() {
+        return (
+            <div className="nd_input">
+                <div ref={this.ref} className="nd_input_anchor" onClick={() => {
+                    this.props.anchorClickCallback(this.props, this.ref.current)
+                }}></div>
+            </div>
+        );
+    }
 }
 
-interface IState {
+class OutputTemplate extends AnchorPoint {
+    render() {
+        return (
+            <div className="nd_output">
+                <div ref={this.ref} className="nd_output_anchor" onClick={() => {
+                    this.props.anchorClickCallback(this.props, this.ref.current)
+                }}></div>
+            </div>
+        );
+    }
+}
+
+class ExtraTemplate extends AnchorPoint {
+    render() {
+        return (
+            <div className="nd_extra">
+                <div ref={this.ref} className="nd_extra_anchor" onClick={() => {
+                    this.props.anchorClickCallback(this.props, this.ref.current)
+                }}></div>
+            </div>
+        );
+    }
+}
+
+interface NodeTemplateSate {
     x: number,
-    y: number
+    y: number,
+    updateAnchors: boolean,
 }
 
-class NodeTemplate extends Component<NodeProps, IState> {
-    private inputs: JSX.Element[];
+class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
+    private inputs: any;
     private outputs: JSX.Element[];
+    private extras: JSX.Element[];
 
-    private controls: NodeControls;
+    private controls: JSX.Element[];
     private class: string;
     private type: string;
-    private node_id: number;
+    private anchorRefs: any;
+    private controlRefs: any;
 
-    constructor(props: NodeProps) {
+    constructor(props: NodeProp) {
         super(props);
 
         this.class = props.class;
         this.type = props.type;
 
-        this.inputs = [];
-        this.inputs = props.inputs.map(input => <InputTemplate {...input}
-                                                               anchorClickCallback={props.anchorClickCallback}
-                                                               parent={this}></InputTemplate>);
-
-        this.outputs = [];
-        this.outputs = props.outputs.map(output => <OutputTemplate {...output}
-                                                                   anchorClickCallback={props.anchorClickCallback}
-                                                                   parent={this}></OutputTemplate>);
-
-        this.controls = props.controls;
+        this.anchorRefs = [];
+        this.controlRefs = [];
 
         this.state = {
             x: props.x,
-            y: props.y
+            y: props.y,
+            updateAnchors: false
         }
 
-        this.node_id = randomInt(100);
+        this.inputs = [];
+        this.inputs = props.inputs.map((input, id) =>
+            <InputTemplate {...input}
+                           ref={this.setAnchorRef()}
+                           index={this.anchorRefs.length - 1}
+                           anchorClickCallback={props.anchorClickCallback}
+                           key={"input_anchor_" + id}
+                           canvas={props.canvas}
+                           parent={this}/>);
 
+        this.outputs = [];
+        this.outputs = props.outputs.map((output, id) =>
+            <OutputTemplate {...output}
+                            ref={this.setAnchorRef()}
+                            index={this.anchorRefs.length - 1}
+                            anchorClickCallback={props.anchorClickCallback}
+                            key={"output_anchor_" + id}
+                            canvas={props.canvas}
+                            parent={this}/>);
+
+        this.extras = [];
+        this.extras = props.extras.map((extra, id) =>
+            <ExtraTemplate {...extra}
+                           ref={this.setAnchorRef()}
+                           index={this.anchorRefs.length - 1}
+                           anchorClickCallback={props.anchorClickCallback}
+                           key={"extras_anchor_" + id}
+                           canvas={props.canvas}
+                           parent={this}/>);
+
+        this.controls = [];
+        this.controls = props.controls.map((control: any, id: number) =>
+            <TextControl
+                ref={this.setControlRef()}
+                index={this.controlRefs.length - 1}
+                key={"control_" + id}
+                parent={this}
+            />);
     }
 
+    setAnchorRef = (): any => {
+        let r = React.createRef();
+        this.anchorRefs.push(r);
+        return r;
+    }
+
+    setControlRef = (): any => {
+        let r = React.createRef();
+        this.controlRefs.push(r);
+        return r;
+    }
 
     handleDrag = (e: any, ui: any) => {
         this.setState({
             x: ui.x,
             y: ui.y,
+            updateAnchors: true
         });
+        this.updateLines();
     };
 
+    updateLines = () => {
+        this.anchorRefs.forEach((a: any) => {
+            a.current.updateLines();
+        })
+    }
 
     icon(class_name: string) {
         switch (class_name) {
@@ -95,12 +188,16 @@ class NodeTemplate extends Component<NodeProps, IState> {
         e.preventDefault();
 
         let showMenuConfig = {
-            position: { x:e.pageX, y:e.pageY },
+            position: {x: e.pageX, y: e.pageY},
             target: null,
-            id: `contextemenu_${this.node_id}`
+            id: `contextemenu_${this.props.index}`
         };
 
         showMenu(showMenuConfig);
+    }
+
+    getAnchorRef(index: number): string {
+        return this.anchorRefs[index];
     }
 
     render() {
@@ -116,9 +213,14 @@ class NodeTemplate extends Component<NodeProps, IState> {
                                 <div className="nd_inputs">
                                     {this.inputs}
                                 </div>
-                                <div className="nd_controls">
+                                <div className="nd_center">
                                     <div className="nd_title">{this.icon(this.class)} {this.type}</div>
-                                    {this.controls.render()}
+                                    <div className={"nd_controls"}>
+                                        {this.controls}
+                                    </div>
+                                    <div className={"nd_extras"}>
+                                        {this.extras}
+                                    </div>
                                 </div>
                                 <div className="nd_outputs">
                                     {this.outputs}
@@ -128,12 +230,16 @@ class NodeTemplate extends Component<NodeProps, IState> {
                     </div>
                 </Draggable>
 
-                <ContextMenu id={`contextemenu_${this.node_id}`}>
-                    <MenuItem data={{foo: 'bar'}} onClick={()=>{alert("Eliminar")}}>
+                <ContextMenu id={`contextemenu_${this.props.index}`}>
+                    <MenuItem data={{foo: 'bar'}} onClick={() => {
+                        alert("Eliminar")
+                    }}>
                         Eliminar
                     </MenuItem>
-                    <MenuItem divider />
-                    <MenuItem data={{foo: 'bar'}} onClick={()=>{alert("Información")}}>
+                    <MenuItem divider/>
+                    <MenuItem data={{foo: 'bar'}} onClick={() => {
+                        alert("Información")
+                    }}>
                         <Icon.HelpCircle></Icon.HelpCircle>Información
                     </MenuItem>
                 </ContextMenu>

@@ -1,20 +1,17 @@
-import InputProp from "./InputProp";
-import OutputProp from "./OutputProp";
-import NodeControls from "../View/Nodes/Controls/NodeControl";
+import AnchorProp from "./AnchorProp";
 
-type NodeProp2 = {
-
-}
-
-abstract class NodeProps{
+abstract class NodeProp{
     x: number;
     y: number;
     type: string;
     class: string;
-    inputs: InputProp[];
-    outputs: OutputProp[];
-    controls: NodeControls;
+    index: number;
+    inputs: AnchorProp[];
+    outputs: AnchorProp[];
+    extras: AnchorProp[];
+    controls: any;
     anchorClickCallback: any;
+    canvas: any;
 
     protected constructor(x: number, y: number, ntype: string, nclass: string) {
         this.x = x;
@@ -23,9 +20,12 @@ abstract class NodeProps{
         this.class = nclass;
         this.inputs = [];
         this.outputs = [];
-        this.controls = new NodeControls();
+        this.extras = [];
+        this.controls = [];
+        this.index = -1;
+        this.canvas = null;
     }
 
 }
 
-export default NodeProps;
+export default NodeProp;

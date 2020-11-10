@@ -1,4 +1,4 @@
-import NodeProps from "./NodeProps";
+import NodeProps from "./NodeProp";
 
 type NodeCanvasProp = {
     nodes: NodeProps[]

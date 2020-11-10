@@ -15,7 +15,7 @@
     /*left: 50px;*/
 }
 
-.container{
+.container {
     max-width: 100%;
 }
 
@@ -24,7 +24,7 @@
     border-radius: 5px;
     position: absolute;
     user-select: none;
-    padding: 10px;
+    padding: 10px 10px 15px 10px;
 }
 
 .source, .btn-source {
@@ -77,11 +77,7 @@
 
 .nd_input {
     display: grid;
-    grid-template-areas: "anchor name";
-}
-
-.nd_input_name {
-    grid-area: name;
+    grid-template-areas: "anchor";
 }
 
 .nd_input_anchor {
@@ -101,11 +97,7 @@
 
 .nd_output {
     display: grid;
-    grid-template-areas: "name anchor";
-}
-
-.nd_output_name {
-    grid-area: name;
+    grid-template-areas: "anchor";
 }
 
 .nd_output_anchor {
@@ -117,7 +109,35 @@
     margin-bottom: 15px;
 }
 
-.nd_controls{
+
+.nd_extras {
+    display: inline-flex;
+    justify-content: space-evenly;
+    position: relative;
+    top: 5px;
+}
+
+.nd_extra {
+    display: grid;
+    grid-template-areas: "anchor";
+}
+
+.nd_extra_anchor {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: lightgreen;
+}
+
+.nd_controls {
+    display: grid;
+}
+
+.nd_center {
+    display: grid;
+    grid-template-columns: 1fr;
+    /*grid-auto-rows: 0;*/
+    grid-template-rows: 0.5fr auto 0;
 }
 
 .nd_input_anchor:hover, .nd_output_anchor:hover {

@@ -30,9 +30,8 @@ function QueryCard(props: any){
 class QueriesModal extends React.Component<any, any> {
 
     renderQueries = () => {
-        console.log(this.props.savedQueries);
         let queries = this.props.savedQueries.map(
-            (x: any)=>{return (<QueryCard {...x}/>);}
+            (x: any, id: any)=>{return (<QueryCard {...x} key={"query_"+id}/>);}
         );
         return queries;
     }

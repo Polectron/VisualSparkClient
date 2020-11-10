@@ -1,10 +1,10 @@
-import NodeProps from "../../Props/NodeProps";
+import NodeProp from "../../Props/NodeProp";
+import AnchorProp from "../../Props/AnchorProp";
 
-class TableNode extends NodeProps{
+class TableNode extends NodeProp{
     constructor(x: number, y: number) {
         super(x, y, "Tabla", "output");
-        this.inputs = [{type:"DataFrame", name:"DataFrame", parent: this}];
-        this.outputs = []
+        this.inputs = [new AnchorProp("DataFrame", "DataFrame", this)];
     }
 }
 

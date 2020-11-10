@@ -1,15 +1,16 @@
-class NodeControls{
+import React from "react";
 
-    controls: any[];
+abstract class NodeControl extends React.Component<any, any> {
+    public name: string;
 
-    constructor() {
-        this.controls = [];
+    protected constructor(props: any) {
+        super(props);
+        this.name = props.name;
     }
 
-    render(){
-        return this.controls;
+    getValue(): string {
+        return this.state.value;
     }
-
 }
 
-export default NodeControls;
+export default NodeControl;

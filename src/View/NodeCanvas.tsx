@@ -3,7 +3,7 @@ import SVGCanvas from "./SVG/SVGCanvas";
 import SVGLineProp from "../Props/SVGLineProp";
 import NodeTemplate from "./Nodes/NodeTemplate";
 import Button from 'react-bootstrap/Button';
-import NodeProps from "../Props/NodeProps";
+import NodeProps from "../Props/NodeProp";
 import Filter from "./Nodes/Filter";
 import Dropdown from "react-bootstrap/Dropdown";
 import Source_CSV_Node from "./Nodes/SourceCSV";
@@ -16,7 +16,6 @@ import * as Icon from "react-feather";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Card from "react-bootstrap/Card";
-import Accordion from "react-bootstrap/Accordion";
 import Aggregation from "./Nodes/Aggregation";
 import Subtract from "./Nodes/Subtract";
 import TableNode from "./Nodes/TableNode";
@@ -24,11 +23,12 @@ import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import SettingsModal from "./Modals/SettingsModal";
 import QueriesModal from "./Modals/QueriesModal";
+import NodesSwatch from "./NodesSwatch";
 
-interface IState {
+interface NodeCanvasState {
     selectedAnchors: any[],
     lines: SVGLineProp[],
-    nodes: JSX.Element[],
+    nodes: NodeTemplate[],
     mouseX: number,
     mouseY: number,
     mouseMoved: boolean,
@@ -42,34 +42,33 @@ interface IState {
     savedQueries: string[]
 }
 
-function NodeButton(props: any) {
-    return <Button style={{margin: "10px"}} variant={props.class}
-                   onClick={props.onClick.bind(null, props.type)}>{props.icon} {props.name}</Button>;
-}
-
-class NodeCanvas extends Component<NodeCanvasProp, IState> {
+class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
     private ref: any;
     private websocket: any;
+    private nodeRefs: any[];
 
     constructor(props: NodeCanvasProp) {
         super(props);
-        let tmp: JSX.Element[] = props.nodes.map(node => {
-            node.anchorClickCallback = this.handleAnchorClick;
-            return <NodeTemplate {...node}></NodeTemplate>;
-        });
 
         this.ref = React.createRef();
+        this.nodeRefs = [];
+
+        let tmp: any[] = props.nodes.map((node, id) => {
+            node.anchorClickCallback = this.handleAnchorClick;
+            this.nodeRefs[id] = React.createRef();
+            return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}/>;
+        });
 
         let sparkServer = localStorage.getItem("sparkServer");
-        if(sparkServer === null){
+        if (sparkServer === null) {
             sparkServer = ""
         }
         let sparkLimit = Number(localStorage.getItem("sparkLimit"));
-        if(sparkLimit === null){
+        if (sparkLimit === null) {
             sparkLimit = 1000
         }
         let savedQueriesjson = localStorage.getItem("savedQueries");
-        if(savedQueriesjson === null){
+        if (savedQueriesjson === null) {
             savedQueriesjson = '[{"name":"Example 1", "img": "No-image-available.png", "tree": {}},' +
                 ' {"name":"Example 2", "img":"No-image-available.png", "tree": {}},' +
                 ' {"name":"Example 3", "img": "No-image-available.png", "tree": {}},' +
@@ -77,8 +76,6 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                 ' {"name":"Example 2", "img": "No-image-available.png", "tree": {}}]'
         }
         let savedQueries = JSON.parse(savedQueriesjson);
-
-        console.log(savedQueries);
 
         this.websocket = null;
 
@@ -98,6 +95,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
             sparkLimit: sparkLimit,
             savedQueries: savedQueries
         }
+
     }
 
     componentDidMount = () => {
@@ -105,11 +103,11 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
     }
 
     connectWebSocket = () => {
-        if(this.state.sparkServer === ""){
+        if (this.state.sparkServer === "") {
             return 0;
         }
 
-        if(this.websocket !== null) {
+        if (this.websocket !== null) {
             this.websocket.close();
         }
 
@@ -135,8 +133,8 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         }
     }
 
-    componentDidUpdate(prevProps: any, prevState: any){
-        if(prevState.sparkServer !== this.state.sparkServer) {
+    componentDidUpdate(prevProps: any, prevState: any) {
+        if (prevState.sparkServer !== this.state.sparkServer) {
             console.log(this.state.sparkServer);
             this.connectWebSocket();
         }
@@ -159,7 +157,7 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
         let tmp: any[] = this.state.lines.map(line => line);
         let line = this.state.currentLine;
 
-        if(anchors.length === 1) {
+        if (anchors.length === 1) {
 
             let anchorBounds = e.getBoundingClientRect();
             let canvasBounds = this.ref.current.getBoundingClientRect();
@@ -168,20 +166,34 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                 x1: anchorBounds.left - canvasBounds.left + 10,
                 y1: anchorBounds.top - canvasBounds.top + 10,
                 x2: this.state.mouseX,
-                y2: this.state.mouseY
+                y2: this.state.mouseY,
+                anchorOne: anchor,
+                anchorTwo: null
             };
 
             tmp.push(line);
-        }else if(anchors.length === 2){
+        } else if (anchors.length === 2) {
 
             let anchorBounds = e.getBoundingClientRect();
             let canvasBounds = this.ref.current.getBoundingClientRect();
 
-            anchors = [];
-            if(line != null) {
+            if (line != null) {
                 line.x2 = anchorBounds.left - canvasBounds.left + 10;
                 line.y2 = anchorBounds.top - canvasBounds.top + 10;
+
+                anchors.forEach((a) => {
+                    let node_index = a.parent.props.index;
+                    let anchor = this.nodeRefs[node_index].current.getAnchorRef(a.index).current;
+                    anchor.addLine(line);
+                });
+
+                line.anchorOne = anchors[0];
+                line.anchorTwo = anchors[1];
+
             }
+
+            line = null;
+            anchors = [];
         }
 
         this.setState({
@@ -216,7 +228,9 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                 node = new Filter(0, 0);
         }
         node.anchorClickCallback = this.handleAnchorClick;
-        tmp.push(<NodeTemplate {...node}></NodeTemplate>);
+        this.nodeRefs.push(React.createRef());
+        tmp.push(<NodeTemplate {...node} key={"node_" + (this.nodeRefs.length - 1)}
+                               ref={this.nodeRefs[this.nodeRefs.length - 1]} canvas={this.ref}/>);
         this.setState({
             nodes: tmp,
             mouseMoved: false,
@@ -249,6 +263,38 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
 
     }
 
+    saveQuery = () => {
+        console.log("Saving query");
+        // this.state.nodes.forEach((n)=>{
+        //     console.log(n.props.type);
+        //     n.props.inputs.forEach((i)=>{console.log(i)});
+        //     n.props.outputs.forEach((o)=>{console.log(o)});
+        // });
+
+        this.nodeRefs.forEach((nr) => {
+            let n = nr.current;
+            console.log(n);
+            n.anchorRefs.forEach((ar: any) => {
+                let a = ar.current;
+                console.log(a);
+            });
+
+            n.controlRefs.forEach((cr: any) => {
+               let c = cr.current;
+               console.log(c);
+               console.log(c.getValue());
+            });
+        });
+    }
+
+    breakSVGLine = () => {
+        let tmpLines = this.state.lines;
+        if (this.state.currentLine) {
+            tmpLines = tmpLines.filter(x => x !== this.state.currentLine);
+        }
+        this.setState({currentLine: null, lines: tmpLines, selectedAnchors: []})
+    }
+
     render() {
         return (
             <>
@@ -256,7 +302,8 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                     className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                     <h5 className="my-0 mr-md-auto font-weight-normal">VisualSpark</h5>
                     <nav className="my-2 my-md-0 mr-md-3">
-                        <Button className="p-2" onClick={() => this.setState({modalQueriesShow: true})}>Explorar consultas</Button>
+                        <Button className="p-2" onClick={() => this.setState({modalQueriesShow: true})}>Explorar
+                            consultas</Button>
                     </nav>
                 </div>
                 <Container>
@@ -272,14 +319,17 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                                         </Tooltip>
                                     }
                                 >
-                                    <Button disabled={!this.state.canExecute} onClick={this.runCode} variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
+                                    <Button disabled={!this.state.canExecute} onClick={this.runCode}
+                                            variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
                                 </OverlayTrigger>
-                                <DropdownButton className="d-none d-lg-block" as={ButtonGroup} title={<Icon.Save></Icon.Save>}
+                                <DropdownButton className="d-none d-lg-block" as={ButtonGroup}
+                                                title={<Icon.Save></Icon.Save>}
                                                 id="bg-nested-dropdown">
-                                    <Dropdown.Item eventKey="1">Guardar</Dropdown.Item>
+                                    <Dropdown.Item eventKey="1" onClick={this.saveQuery}>Guardar</Dropdown.Item>
                                     <Dropdown.Item eventKey="2">Guardar Como</Dropdown.Item>
                                 </DropdownButton>
-                                <Button onClick={() => this.setState({modalShow: true})} variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
+                                <Button onClick={() => this.setState({modalShow: true})}
+                                        variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
                             </ButtonGroup>
                         </Col>
                     </Row>
@@ -287,143 +337,14 @@ class NodeCanvas extends Component<NodeCanvasProp, IState> {
                         <Col className="d-none d-lg-block" lg={2}>
                             <Row>
                                 <Col>
-                                    <Accordion defaultActiveKey="0">
-                                        <Card>
-                                            <Card.Header>
-                                                <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                                                    Fuentes
-                                                </Accordion.Toggle>
-                                            </Card.Header>
-                                            <Accordion.Collapse eventKey="0">
-                                                <Card.Body>
-                                                    <NodeButton onClick={this.addNode} type={"Source_JDBC_Node"}
-                                                                class={"source"}
-                                                                name={"Fuente JDBC"}
-                                                                icon={
-                                                                    <Icon.Database></Icon.Database>}></NodeButton>
-                                                    <NodeButton onClick={this.addNode} type={"Source_MONGODB_Node"}
-                                                                class={"source"}
-                                                                name={"Fuente MongoDB"}
-                                                                icon={
-                                                                    <Icon.Database></Icon.Database>}></NodeButton>
-                                                    <NodeButton onClick={this.addNode} type={"Source_JSON_Node"}
-                                                                class={"source"}
-                                                                name={"Fuente JSON"}
-                                                                icon={
-                                                                    <Icon.Database></Icon.Database>}></NodeButton>
-                                                    <NodeButton onClick={this.addNode} type={"Source_CSV_Node"}
-                                                                class={"source"}
-                                                                name={"Fuente CSV"}
-                                                                icon={
-                                                                    <Icon.Database></Icon.Database>}></NodeButton>
-                                                </Card.Body>
-                                            </Accordion.Collapse>
-                                        </Card>
-                                        <Card>
-                                            <Card.Header>
-                                                <Accordion.Toggle as={Button} variant="link" eventKey="1">
-                                                    Filtros
-                                                </Accordion.Toggle>
-                                            </Card.Header>
-                                            <Accordion.Collapse eventKey="1">
-                                                <Card.Body>
-                                                    <NodeButton onClick={this.addNode} type={"Filter"} class={"filter"}
-                                                                name={"Filtro"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Limit"} class={"filter"}
-                                                                name={"Límite"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Distinct"} class={"filter"}
-                                                                name={"Distintos"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Subtract"} class={"filter"}
-                                                                name={"Substraer"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Intersect"} class={"filter"}
-                                                                name={"Intersección"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Union"} class={"filter"}
-                                                                name={"Unión"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"OrderBy"} class={"filter"}
-                                                                name={"Ordenar Por"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Sample"} class={"filter"}
-                                                                name={"Muestra"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Select"} class={"filter"}
-                                                                name={"Proyección"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Sort"} class={"filter"}
-                                                                name={"Muestra"}
-                                                                icon={<Icon.Filter></Icon.Filter>}></NodeButton>
-                                                </Card.Body>
-                                            </Accordion.Collapse>
-                                        </Card>
-                                        <Card>
-                                            <Card.Header>
-                                                <Accordion.Toggle as={Button} variant="link" eventKey="2">
-                                                    Agregación
-                                                </Accordion.Toggle>
-                                            </Card.Header>
-                                            <Accordion.Collapse eventKey="2">
-                                                <Card.Body>
-                                                    <NodeButton onClick={this.addNode} type={"Aggr"} class={"aggr"}
-                                                                name={"Agregación"}
-                                                                icon={<Icon.Box></Icon.Box>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Sum"} class={"aggr"}
-                                                                name={"Suma"}
-                                                                icon={<Icon.Plus></Icon.Plus>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Min"} class={"aggr"}
-                                                                name={"Mínimo"}
-                                                                icon={<Icon.Plus></Icon.Plus>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Max"} class={"aggr"}
-                                                                name={"Máximo"}
-                                                                icon={<Icon.Plus></Icon.Plus>}></NodeButton>
-
-                                                    <NodeButton onClick={this.addNode} type={"Avg"} class={"aggr"}
-                                                                name={"Media"}
-                                                                icon={<Icon.Plus></Icon.Plus>}></NodeButton>
-                                                </Card.Body>
-                                            </Accordion.Collapse>
-                                        </Card>
-                                        <Card>
-                                            <Card.Header>
-                                                <Accordion.Toggle as={Button} variant="link" eventKey="3">
-                                                    Salidas
-                                                </Accordion.Toggle>
-                                            </Card.Header>
-                                            <Accordion.Collapse eventKey="3">
-                                                <Card.Body>
-                                                    <NodeButton onClick={this.addNode} type={"BarGraph"} class={"output"}
-                                                                name={"Gráfico de barras"}
-                                                                icon={<Icon.BarChart2></Icon.BarChart2>}></NodeButton>
-                                                    <NodeButton onClick={this.addNode} type={"Table"} class={"output"}
-                                                                name={"Tabla"}
-                                                                icon={<Icon.BarChart2></Icon.BarChart2>}></NodeButton>
-                                                </Card.Body>
-                                            </Accordion.Collapse>
-                                        </Card>
-                                    </Accordion>
+                                    <NodesSwatch addNode={this.addNode}/>
                                 </Col>
                             </Row>
                         </Col>
                         <Col className="d-none d-lg-block">
-                            <div ref={this.ref} onMouseMove={this._onMouseMove} >
+                            <div ref={this.ref} onMouseMove={this._onMouseMove}>
                                 {this.state.nodes}
-                                <SVGCanvas lines={this.state.lines}></SVGCanvas>
+                                <SVGCanvas lines={this.state.lines} breakSVGLine={this.breakSVGLine}></SVGCanvas>
                             </div>
                         </Col>
                         <Col lg={3}>
