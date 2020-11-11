@@ -3,10 +3,8 @@ import SVGCanvas from "./SVG/SVGCanvas";
 import SVGLineProp from "../Props/SVGLineProp";
 import NodeTemplate from "./Nodes/NodeTemplate";
 import Button from 'react-bootstrap/Button';
-import NodeProps from "../Props/NodeProp";
-import Filter from "./Nodes/Filter";
+import NodeProp from "../Props/NodeProp";
 import Dropdown from "react-bootstrap/Dropdown";
-import Source_CSV_Node from "./Nodes/SourceCSV";
 import NodeCanvasProp from "../Props/NodeCanvasProp";
 
 import Row from "react-bootstrap/Row";
@@ -16,19 +14,18 @@ import * as Icon from "react-feather";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Card from "react-bootstrap/Card";
-import Aggregation from "./Nodes/Aggregation";
-import Subtract from "./Nodes/Subtract";
-import TableNode from "./Nodes/TableNode";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import SettingsModal from "./Modals/SettingsModal";
 import QueriesModal from "./Modals/QueriesModal";
 import NodesSwatch from "./NodesSwatch";
+import TableOutput from "./Outputs/TableOutput";
 
 interface NodeCanvasState {
     selectedAnchors: any[],
     lines: SVGLineProp[],
     nodes: NodeTemplate[],
+    outputs: any[],
     mouseX: number,
     mouseY: number,
     mouseMoved: boolean,
@@ -39,7 +36,9 @@ interface NodeCanvasState {
     modalQueriesShow: boolean,
     sparkServer: string,
     sparkLimit: number,
-    savedQueries: string[]
+    savedQueries: string[],
+    expandedOutputs: any,
+    outputsIcon: any
 }
 
 class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
@@ -53,10 +52,8 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         this.ref = React.createRef();
         this.nodeRefs = [];
 
-        let tmp: any[] = props.nodes.map((node, id) => {
-            node.anchorClickCallback = this.handleAnchorClick;
-            this.nodeRefs[id] = React.createRef();
-            return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}/>;
+        let tmp: any[] = props.nodes.map((node) => {
+            return this.createNode(node);
         });
 
         let sparkServer = localStorage.getItem("sparkServer");
@@ -83,6 +80,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             selectedAnchors: [],
             lines: [],
             nodes: tmp,
+            outputs: [],
             mouseX: 0,
             mouseY: 0,
             mouseMoved: false,
@@ -93,7 +91,9 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             modalQueriesShow: false,
             sparkServer: sparkServer,
             sparkLimit: sparkLimit,
-            savedQueries: savedQueries
+            savedQueries: savedQueries,
+            expandedOutputs: "d-lg-block",
+            outputsIcon: <Icon.ArrowLeft/>
         }
 
     }
@@ -205,36 +205,41 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
 
     }
 
-    addNode = (type: string) => {
+    addNode = (data: any) => {
         let tmp: any[] = this.state.nodes.map(node => node);
-        let node: NodeProps;
-        switch (type) {
-            case "Filter":
-                node = new Filter(0, 0);
-                break;
-            case "Substract":
-                node = new Subtract(0, 0);
-                break;
-            case "Source_CSV_Node":
-                node = new Source_CSV_Node(0, 0);
-                break;
-            case "Aggr":
-                node = new Aggregation(0, 0);
-                break;
-            case "Table":
-                node = new TableNode(0, 0);
-                break;
-            default:
-                node = new Filter(0, 0);
+        let node: NodeProp = data.node;
+        let onAdd: any = data.onAdd;
+
+        if(node !== null) {
+            tmp.push(this.createNode(node));
+            this.setState({
+                nodes: tmp,
+                mouseMoved: false,
+            });
         }
+
+        if(onAdd !== null){
+            onAdd(this.nodeRefs.length - 1);
+        }
+
+    }
+
+    private createNode(node: NodeProp) {
         node.anchorClickCallback = this.handleAnchorClick;
         this.nodeRefs.push(React.createRef());
-        tmp.push(<NodeTemplate {...node} key={"node_" + (this.nodeRefs.length - 1)}
-                               ref={this.nodeRefs[this.nodeRefs.length - 1]} canvas={this.ref}/>);
-        this.setState({
-            nodes: tmp,
-            mouseMoved: false,
-        });
+        let id = this.nodeRefs.length - 1;
+        return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}/>;
+    }
+
+    private addOutput = (id: number) => {
+        console.log("Adding output for node "+id);
+        let tmp: any[] = this.state.outputs.map(o => o);
+
+        tmp.push(<TableOutput id={id}/>);
+
+        console.log(tmp);
+
+        this.setState({outputs: tmp});
     }
 
     _onMouseMove = (e: any) => {
@@ -265,11 +270,6 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
 
     saveQuery = () => {
         console.log("Saving query");
-        // this.state.nodes.forEach((n)=>{
-        //     console.log(n.props.type);
-        //     n.props.inputs.forEach((i)=>{console.log(i)});
-        //     n.props.outputs.forEach((o)=>{console.log(o)});
-        // });
 
         this.nodeRefs.forEach((nr) => {
             let n = nr.current;
@@ -280,9 +280,9 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             });
 
             n.controlRefs.forEach((cr: any) => {
-               let c = cr.current;
-               console.log(c);
-               console.log(c.getValue());
+                let c = cr.current;
+                console.log(c);
+                console.log(c.getValue());
             });
         });
     }
@@ -293,6 +293,26 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             tmpLines = tmpLines.filter(x => x !== this.state.currentLine);
         }
         this.setState({currentLine: null, lines: tmpLines, selectedAnchors: []})
+    }
+
+    renderOutputs = () => {
+        if (this.state.outputs.length <= 0) {
+            return (
+                <Card>
+                    <Card.Body>
+                        <Card.Title>Sin salidas</Card.Title>
+                        <Card.Subtitle className="mb-2 text-muted">Introduce salidas</Card.Subtitle>
+                        <Card.Text>
+                            Para ver resultados en este panel introduce salidas en la consulta.
+                        </Card.Text>
+                    </Card.Body>
+                </Card>
+            );
+        } else {
+            return (
+                this.state.outputs
+            );
+        }
     }
 
     render() {
@@ -320,43 +340,36 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                                     }
                                 >
                                     <Button disabled={!this.state.canExecute} onClick={this.runCode}
-                                            variant={this.state.executeVariant}><Icon.Play></Icon.Play></Button>
+                                            variant={this.state.executeVariant}><Icon.Play/></Button>
                                 </OverlayTrigger>
                                 <DropdownButton className="d-none d-lg-block" as={ButtonGroup}
-                                                title={<Icon.Save></Icon.Save>}
+                                                title={<Icon.Save/>}
                                                 id="bg-nested-dropdown">
                                     <Dropdown.Item eventKey="1" onClick={this.saveQuery}>Guardar</Dropdown.Item>
                                     <Dropdown.Item eventKey="2">Guardar Como</Dropdown.Item>
                                 </DropdownButton>
                                 <Button onClick={() => this.setState({modalShow: true})}
-                                        variant={"secondary"}><Icon.Settings></Icon.Settings></Button>
+                                        variant={"secondary"}><Icon.Settings/></Button>
                             </ButtonGroup>
                         </Col>
                     </Row>
                     <Row>
-                        <Col className="d-none d-lg-block" lg={2}>
+                        <Col className={"d-none "+this.state.expandedOutputs} lg={2}>
                             <Row>
                                 <Col>
-                                    <NodesSwatch addNode={this.addNode}/>
+                                    <NodesSwatch addNode={this.addNode} addOutput={this.addOutput}/>
                                 </Col>
                             </Row>
                         </Col>
-                        <Col className="d-none d-lg-block">
+                        <Col className={"d-none "+this.state.expandedOutputs} lg={7}>
                             <div ref={this.ref} onMouseMove={this._onMouseMove}>
                                 {this.state.nodes}
-                                <SVGCanvas lines={this.state.lines} breakSVGLine={this.breakSVGLine}></SVGCanvas>
+                                <SVGCanvas lines={this.state.lines} breakSVGLine={this.breakSVGLine}/>
                             </div>
                         </Col>
-                        <Col lg={3}>
-                            <Card>
-                                <Card.Body>
-                                    <Card.Title>Sin salidas</Card.Title>
-                                    <Card.Subtitle className="mb-2 text-muted">Introduce salidas</Card.Subtitle>
-                                    <Card.Text>
-                                        Para ver resultados en este panel introduce salidas en el diseñador.
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
+                        <Col>
+                            <Button className={"d-none d-lg-block"} onClick={this.toggleOutputs}>{this.state.outputsIcon}</Button>
+                            {this.renderOutputs()}
                         </Col>
                     </Row>
                 </Container>
@@ -374,6 +387,14 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                 />
             </>
         );
+    }
+
+    private toggleOutputs = () => {
+        if(this.state.expandedOutputs === ""){
+            this.setState({expandedOutputs: "d-lg-block", outputsIcon: <Icon.ArrowLeft/>});
+        }else{
+            this.setState({expandedOutputs: "", outputsIcon: <Icon.ArrowRight/>});
+        }
     }
 }
 

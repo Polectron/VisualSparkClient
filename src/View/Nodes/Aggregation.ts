@@ -6,7 +6,7 @@ class Aggregation extends NodeProp{
         super(x, y, "Aggregation", "aggr");
         this.inputs = [new AnchorProp("DataFrame", "DataFrame", this)];
         this.outputs = [new AnchorProp("DataFrame", "DataFrame", this)];
-        this.extras = [new AnchorProp("DataFrame", "DataFrame", this), new AnchorProp("DataFrame", "DataFrame", this)];
+        this.extras = [new AnchorProp("DataFrame", "DataFrame", this)];
     }
 }
 
