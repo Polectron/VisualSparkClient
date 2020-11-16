@@ -1,7 +1,7 @@
 import SVGLineProp from "./SVGLineProp";
 
 class AnchorProp{
-    type: string;
+    type?: string;
     name: string;
     lines: SVGLineProp[];
     anchorClickCallback?: any;
@@ -9,8 +9,7 @@ class AnchorProp{
     index: number;
     canvas: any;
 
-    constructor(type: string, name: string, parent: any) {
-        this.type = type;
+    constructor(name: string, parent: any) {
         this.name = name;
         this.parent = parent;
         this.lines = [];

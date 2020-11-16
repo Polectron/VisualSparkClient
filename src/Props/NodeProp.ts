@@ -8,19 +8,23 @@ abstract class NodeProp{
     index: number;
     inputs: AnchorProp[];
     outputs: AnchorProp[];
-    extras: AnchorProp[];
+    agg_inputs: AnchorProp[];
+    agg_outputs: AnchorProp[];
     controls: any;
     anchorClickCallback: any;
     canvas: any;
+    title: string;
 
-    protected constructor(x: number, y: number, ntype: string, nclass: string) {
+    protected constructor(x: number, y: number, title: string, ntype: string, nclass: string) {
         this.x = x;
         this.y = y;
+        this.title = title;
         this.type = ntype;
         this.class = nclass;
         this.inputs = [];
         this.outputs = [];
-        this.extras = [];
+        this.agg_inputs = [];
+        this.agg_outputs = [];
         this.controls = [];
         this.index = -1;
         this.canvas = null;

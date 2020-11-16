@@ -7,6 +7,9 @@ import {ContextMenu, MenuItem, showMenu} from "react-contextmenu";
 import NodeProp from "../../Props/NodeProp";
 import SVGLineProp from "../../Props/SVGLineProp";
 import TextControl from "./Controls/TextControl";
+import Tooltip from "react-bootstrap/Tooltip";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import PasswordControl from "./Controls/PasswordControl";
 
 class AnchorPoint extends React.Component<AnchorProp, any> {
     public ref: any;
@@ -38,15 +41,40 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
     public addLine = (line: SVGLineProp) => {
         this.props.lines.push(line);
     }
+
+    public canConnect = (a: AnchorPoint): boolean => {
+        if (this.props.type === "input") {
+            return a.props.type === "output";
+        } else if (this.props.type === "output") {
+            return a.props.type === "input";
+        } else if (this.props.type === "agg_input") {
+            return a.props.type === "agg_output";
+        } else if (this.props.type === "agg_output") {
+            return a.props.type === "agg_input";
+        }
+
+        return false;
+    }
+
 }
 
 class InputTemplate extends AnchorPoint {
     render() {
         return (
             <div className="nd_input">
-                <div ref={this.ref} className="nd_input_anchor" onClick={() => {
-                    this.props.anchorClickCallback(this.props, this.ref.current)
-                }}></div>
+                <OverlayTrigger
+                    delay={{show: 350, hide: 300}}
+                    placement={"top"}
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {this.props.name}
+                        </Tooltip>
+                    }
+                >
+                    <div ref={this.ref} className="nd_input_anchor" onClick={() => {
+                        this.props.anchorClickCallback(this.props, this.ref.current)
+                    }}></div>
+                </OverlayTrigger>
             </div>
         );
     }
@@ -56,21 +84,63 @@ class OutputTemplate extends AnchorPoint {
     render() {
         return (
             <div className="nd_output">
-                <div ref={this.ref} className="nd_output_anchor" onClick={() => {
-                    this.props.anchorClickCallback(this.props, this.ref.current)
-                }}></div>
+                <OverlayTrigger
+                    delay={{show: 350, hide: 300}}
+                    placement={"top"}
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {this.props.name}
+                        </Tooltip>
+                    }
+                >
+                    <div ref={this.ref} className="nd_output_anchor" onClick={() => {
+                        this.props.anchorClickCallback(this.props, this.ref.current)
+                    }}></div>
+                </OverlayTrigger>
             </div>
         );
     }
 }
 
-class ExtraTemplate extends AnchorPoint {
+class AggInput extends AnchorPoint {
     render() {
         return (
-            <div className="nd_extra">
-                <div ref={this.ref} className="nd_extra_anchor" onClick={() => {
-                    this.props.anchorClickCallback(this.props, this.ref.current)
-                }}></div>
+            <div className="nd_agginput">
+                <OverlayTrigger
+                    delay={{show: 350, hide: 300}}
+                    placement={"top"}
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {this.props.name}
+                        </Tooltip>
+                    }
+                >
+                    <div ref={this.ref} className="nd_agginput_anchor" onClick={() => {
+                        this.props.anchorClickCallback(this.props, this.ref.current)
+                    }}></div>
+                </OverlayTrigger>
+            </div>
+        );
+    }
+}
+
+class AggOutput extends AnchorPoint {
+    render() {
+        return (
+            <div className="nd_output">
+                <OverlayTrigger
+                    delay={{show: 350, hide: 300}}
+                    placement={"top"}
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {this.props.name}
+                        </Tooltip>
+                    }
+                >
+                    <div ref={this.ref} className="nd_output_anchor" onClick={() => {
+                        this.props.anchorClickCallback(this.props, this.ref.current)
+                    }}></div>
+                </OverlayTrigger>
             </div>
         );
     }
@@ -85,8 +155,8 @@ interface NodeTemplateSate {
 class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     private inputs: any;
     private outputs: JSX.Element[];
-    private extras: JSX.Element[];
-
+    private agg_inputs: JSX.Element[];
+    private agg_outputs: JSX.Element[];
     private controls: JSX.Element[];
     private class: string;
     private type: string;
@@ -116,6 +186,7 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                            anchorClickCallback={props.anchorClickCallback}
                            key={"input_anchor_" + id}
                            canvas={props.canvas}
+                           type={"input"}
                            parent={this}/>);
 
         this.outputs = [];
@@ -126,26 +197,58 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                             anchorClickCallback={props.anchorClickCallback}
                             key={"output_anchor_" + id}
                             canvas={props.canvas}
+                            type={"output"}
                             parent={this}/>);
 
-        this.extras = [];
-        this.extras = props.extras.map((extra, id) =>
-            <ExtraTemplate {...extra}
-                           ref={this.setAnchorRef()}
-                           index={this.anchorRefs.length - 1}
-                           anchorClickCallback={props.anchorClickCallback}
-                           key={"extras_anchor_" + id}
-                           canvas={props.canvas}
-                           parent={this}/>);
+        this.agg_inputs = [];
+        this.agg_inputs = props.agg_inputs.map((extra, id) =>
+            <AggInput {...extra}
+                      ref={this.setAnchorRef()}
+                      index={this.anchorRefs.length - 1}
+                      anchorClickCallback={props.anchorClickCallback}
+                      key={"extras_anchor_" + id}
+                      canvas={props.canvas}
+                      type={"agg_input"}
+                      parent={this}/>);
+
+        this.agg_outputs = [];
+        this.agg_outputs = props.agg_outputs.map((extra, id) =>
+            <AggOutput {...extra}
+                       ref={this.setAnchorRef()}
+                       index={this.anchorRefs.length - 1}
+                       anchorClickCallback={props.anchorClickCallback}
+                       key={"extras_anchor_" + id}
+                       canvas={props.canvas}
+                       type={"agg_output"}
+                       parent={this}/>);
 
         this.controls = [];
-        this.controls = props.controls.map((control: any, id: number) =>
-            <TextControl
-                ref={this.setControlRef()}
-                index={this.controlRefs.length - 1}
-                key={"control_" + id}
-                parent={this}
-            />);
+        this.controls = props.controls.map((control: any, id: number) => {
+                if (control.type === "text") {
+                    return <TextControl
+                        name={control.name}
+                        value={control.value}
+                        ref={this.setControlRef()}
+                        index={this.controlRefs.length - 1}
+                        key={"control_" + id}
+                        parent={this}
+
+                    />
+                } else if (control.type === "password") {
+                    return <PasswordControl
+                        name={control.name}
+                        value={control.value}
+                        ref={this.setControlRef()}
+                        index={this.controlRefs.length - 1}
+                        key={"control_" + id}
+                        parent={this}
+
+                    />
+                }else{
+                    return null;
+                }
+            }
+        );
     }
 
     setAnchorRef = (): any => {
@@ -178,9 +281,9 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     icon(class_name: string) {
         switch (class_name) {
             case "source":
-                return <Icon.Database></Icon.Database>;
+                return <Icon.Database/>;
             case "filter":
-                return <Icon.Filter></Icon.Filter>;
+                return <Icon.Filter/>;
         }
     }
 
@@ -214,12 +317,17 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                                     {this.inputs}
                                 </div>
                                 <div className="nd_center">
-                                    <div className="nd_title">{this.icon(this.class)} {this.type}</div>
+                                    <div className={"nd_aggoutputs"}>
+                                        {this.agg_outputs}
+                                    </div>
+                                    <div
+                                        className="nd_title">{this.icon(this.class)} {this.props.title} ({this.props.index})
+                                    </div>
                                     <div className={"nd_controls"}>
                                         {this.controls}
                                     </div>
-                                    <div className={"nd_extras"}>
-                                        {this.extras}
+                                    <div className={"nd_agginputs"}>
+                                        {this.agg_inputs}
                                     </div>
                                 </div>
                                 <div className="nd_outputs">
@@ -240,7 +348,7 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                     <MenuItem data={{foo: 'bar'}} onClick={() => {
                         alert("Información")
                     }}>
-                        <Icon.HelpCircle></Icon.HelpCircle>Información
+                        <Icon.HelpCircle/>Información
                     </MenuItem>
                 </ContextMenu>
 

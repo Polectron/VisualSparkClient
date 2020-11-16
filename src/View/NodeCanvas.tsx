@@ -20,6 +20,8 @@ import SettingsModal from "./Modals/SettingsModal";
 import QueriesModal from "./Modals/QueriesModal";
 import NodesSwatch from "./NodesSwatch";
 import TableOutput from "./Outputs/TableOutput";
+import NodeControl from "./Nodes/Controls/NodeControl";
+import AnchorProp from "../Props/AnchorProp";
 
 interface NodeCanvasState {
     selectedAnchors: any[],
@@ -38,19 +40,22 @@ interface NodeCanvasState {
     sparkLimit: number,
     savedQueries: string[],
     expandedOutputs: any,
-    outputsIcon: any
+    outputsIcon: any,
+    outputsColSize: number
 }
 
 class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
     private ref: any;
     private websocket: any;
     private nodeRefs: any[];
+    private tableRefs: any[];
 
     constructor(props: NodeCanvasProp) {
         super(props);
 
         this.ref = React.createRef();
         this.nodeRefs = [];
+        this.tableRefs = [];
 
         let tmp: any[] = props.nodes.map((node) => {
             return this.createNode(node);
@@ -93,6 +98,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             sparkLimit: sparkLimit,
             savedQueries: savedQueries,
             expandedOutputs: "d-lg-block",
+            outputsColSize: 3,
             outputsIcon: <Icon.ArrowLeft/>
         }
 
@@ -122,7 +128,10 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         }
 
         this.websocket.onmessage = (e: any) => {
-            console.log(JSON.parse(e["data"]));
+            let data = JSON.parse(e["data"]);
+            if (data["type"] === "table") {
+                this.loadTable(data["id"], data["data"]);
+            }
         };
 
         this.websocket.onopen = (e: any) => {
@@ -131,6 +140,26 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                 canExecute: true
             });
         }
+    }
+
+    loadTable(id: any, data: any) {
+        console.log(id);
+        console.log(data);
+
+        let columns: any = [];
+
+        Object.keys(data[0]).forEach((k) => {
+            columns.push(k);
+        });
+        console.log(columns);
+
+        let table = this.tableRefs[id].current;
+
+        columns.forEach((c: string) => {
+            table.addColumn(c)
+        });
+
+        table.addRows(data);
     }
 
     componentDidUpdate(prevProps: any, prevState: any) {
@@ -147,7 +176,15 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
     }
 
     runCode = () => {
-        this.websocket.send(JSON.stringify({action: "query", tree: {}, limit: this.state.sparkLimit}));
+        let nodes = this.serializeQuery();
+        this.clearOutputs();
+        this.websocket.send(JSON.stringify({action: "query", nodes: nodes, limit: this.state.sparkLimit}));
+    }
+
+    clearOutputs = () => {
+        this.tableRefs.forEach((t)=>{
+            t.current.clear();
+        });
     }
 
     handleAnchorClick = (anchor: any, e: any) => {
@@ -174,6 +211,14 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             tmp.push(line);
         } else if (anchors.length === 2) {
 
+            let anchor1 = this.nodeRefs[anchors[0].parent.props.index].current.getAnchorRef(anchors[0].index).current;
+            let anchor2 = this.nodeRefs[anchors[1].parent.props.index].current.getAnchorRef(anchors[1].index).current;
+
+            if(!anchor1.canConnect(anchor2)){
+                this.breakSVGLine();
+                return;
+            }
+
             let anchorBounds = e.getBoundingClientRect();
             let canvasBounds = this.ref.current.getBoundingClientRect();
 
@@ -181,14 +226,14 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                 line.x2 = anchorBounds.left - canvasBounds.left + 10;
                 line.y2 = anchorBounds.top - canvasBounds.top + 10;
 
+                line.anchorOne = anchors[0];
+                line.anchorTwo = anchors[1];
+
                 anchors.forEach((a) => {
                     let node_index = a.parent.props.index;
                     let anchor = this.nodeRefs[node_index].current.getAnchorRef(a.index).current;
                     anchor.addLine(line);
                 });
-
-                line.anchorOne = anchors[0];
-                line.anchorTwo = anchors[1];
 
             }
 
@@ -207,10 +252,10 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
 
     addNode = (data: any) => {
         let tmp: any[] = this.state.nodes.map(node => node);
-        let node: NodeProp = data.node;
+        let node: NodeProp = data.newNode();
         let onAdd: any = data.onAdd;
 
-        if(node !== null) {
+        if (node !== null) {
             tmp.push(this.createNode(node));
             this.setState({
                 nodes: tmp,
@@ -218,7 +263,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             });
         }
 
-        if(onAdd !== null){
+        if (onAdd !== null) {
             onAdd(this.nodeRefs.length - 1);
         }
 
@@ -231,13 +276,13 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}/>;
     }
 
-    private addOutput = (id: number) => {
-        console.log("Adding output for node "+id);
+    private addTable = (id: number) => {
+        console.log("Adding output for node " + id);
         let tmp: any[] = this.state.outputs.map(o => o);
 
-        tmp.push(<TableOutput id={id}/>);
+        this.tableRefs[id] = React.createRef();
 
-        console.log(tmp);
+        tmp.push(<TableOutput ref={this.tableRefs[id]} columns={[]} data={[]} id={id}/>);
 
         this.setState({outputs: tmp});
     }
@@ -268,23 +313,62 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
 
     }
 
-    saveQuery = () => {
-        console.log("Saving query");
+    serializeQuery = () => {
+        let nodes: any[] = [];
 
         this.nodeRefs.forEach((nr) => {
             let n = nr.current;
-            console.log(n);
+
+            let inputs: any[] = [];
+            let aggs: any = {};
             n.anchorRefs.forEach((ar: any) => {
-                let a = ar.current;
-                console.log(a);
+
+                let a: AnchorProp = ar.current.props;
+
+                if (a.type === "input" || a.type === "agg_input") {
+
+                    let connections: any[] = [];
+
+                    a.lines.forEach((l) => {
+                        if (l.anchorOne != null && l.anchorTwo != null) {
+
+                            if (l.anchorOne.parent.props.index === n.props.index) {
+                                connections.push(l.anchorTwo.parent.props.index)
+                            } else {
+                                connections.push(l.anchorOne.parent.props.index)
+                            }
+                        }
+                    });
+
+                    if (a.type === "input")
+                        inputs.push({name: a.name, connects_to: connections});
+
+                    if (a.type === "agg_input")
+                        aggs = {name: a.name, connects_to: connections};
+                }
             });
 
+            let controls: any = [];
             n.controlRefs.forEach((cr: any) => {
-                let c = cr.current;
-                console.log(c);
-                console.log(c.getValue());
+                let c: NodeControl = cr.current;
+                controls.push({name: c.name, value: c.getValue()});
             });
+
+            let node = {id: n.props.index, type: n.type, inputs: inputs, controls: controls, aggs: aggs};
+            nodes.push(node);
+
         });
+
+        return nodes;
+    }
+
+    saveQuery = () => {
+        console.log("Saving query");
+
+        let nodes = this.serializeQuery();
+
+        // console.log(JSON.stringify(nodes));
+        console.log(nodes);
     }
 
     breakSVGLine = () => {
@@ -354,21 +438,22 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                         </Col>
                     </Row>
                     <Row>
-                        <Col className={"d-none "+this.state.expandedOutputs} lg={2}>
+                        <Col className={"d-none " + this.state.expandedOutputs} lg={2}>
                             <Row>
                                 <Col>
-                                    <NodesSwatch addNode={this.addNode} addOutput={this.addOutput}/>
+                                    <NodesSwatch addNode={this.addNode} addTable={this.addTable}/>
                                 </Col>
                             </Row>
                         </Col>
-                        <Col className={"d-none "+this.state.expandedOutputs} lg={7}>
+                        <Col className={"d-none " + this.state.expandedOutputs} lg={7}>
                             <div ref={this.ref} onMouseMove={this._onMouseMove}>
                                 {this.state.nodes}
                                 <SVGCanvas lines={this.state.lines} breakSVGLine={this.breakSVGLine}/>
                             </div>
                         </Col>
-                        <Col>
-                            <Button className={"d-none d-lg-block"} onClick={this.toggleOutputs}>{this.state.outputsIcon}</Button>
+                        <Col lg={this.state.outputsColSize}>
+                            <Button className={"d-none d-lg-block"}
+                                    onClick={this.toggleOutputs}>{this.state.outputsIcon}</Button>
                             {this.renderOutputs()}
                         </Col>
                     </Row>
@@ -390,10 +475,10 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
     }
 
     private toggleOutputs = () => {
-        if(this.state.expandedOutputs === ""){
-            this.setState({expandedOutputs: "d-lg-block", outputsIcon: <Icon.ArrowLeft/>});
-        }else{
-            this.setState({expandedOutputs: "", outputsIcon: <Icon.ArrowRight/>});
+        if (this.state.expandedOutputs === "") {
+            this.setState({expandedOutputs: "d-lg-block", outputsIcon: <Icon.ArrowLeft/>, outputsColSize: 3});
+        } else {
+            this.setState({expandedOutputs: "", outputsIcon: <Icon.ArrowRight/>, outputsColSize: 12});
         }
     }
 }

@@ -110,19 +110,38 @@
 }
 
 
-.nd_extras {
+.nd_agginputs {
     display: inline-flex;
     justify-content: space-evenly;
     position: relative;
     top: 5px;
 }
 
-.nd_extra {
+.nd_agginput {
     display: grid;
     grid-template-areas: "anchor";
 }
 
-.nd_extra_anchor {
+.nd_agginput_anchor {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: lightgreen;
+}
+
+.nd_aggoutputs {
+    display: inline-flex;
+    justify-content: space-evenly;
+    position: relative;
+    top: -20px;
+}
+
+.nd_aggoutput {
+    display: grid;
+    grid-template-areas: "anchor";
+}
+
+.nd_aggoutput_anchor {
     width: 20px;
     height: 20px;
     border-radius: 10px;
@@ -137,7 +156,7 @@
     display: grid;
     grid-template-columns: 1fr;
     /*grid-auto-rows: 0;*/
-    grid-template-rows: 0.5fr auto 0;
+    grid-template-rows: 0 0.5fr auto 0;
 }
 
 .nd_input_anchor:hover, .nd_output_anchor:hover {

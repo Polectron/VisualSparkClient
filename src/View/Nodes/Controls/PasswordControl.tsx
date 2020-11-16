@@ -1,7 +1,7 @@
 import React from "react";
 import NodeControl from "./NodeControl";
 
-class TextControl extends NodeControl {
+class PasswordControl extends NodeControl {
 
     handleInputChange = (event: any) => {
         const target = event.target;
@@ -14,11 +14,11 @@ class TextControl extends NodeControl {
     render() {
         return (
             <div id={"nd_extra"}>
-                <input type={"text"} value={this.state.value} onChange={this.handleInputChange}/>
+                <input type={"password"} value={this.state.value} onChange={this.handleInputChange}/>
             </div>
         );
     }
 
 }
 
-export default TextControl;
+export default PasswordControl;

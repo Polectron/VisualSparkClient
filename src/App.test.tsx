@@ -1,8 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import App from './App';
-import * as Icon from "react-feather";
-import Filter from './View/Nodes/Filter';
+import Filter from './View/Nodes/Filters/Filter';
 import NodeTemplate from "./View/Nodes/NodeTemplate";
 
 test('render filter node', () => {
