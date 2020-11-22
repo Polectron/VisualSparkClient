@@ -9,6 +9,11 @@ function App() {
 
     let canvas: NodeCanvasProp = {nodes: nodes};
 
+    const url = window.location.origin
+    if (url.includes('https')) {
+        window.location.href = `http:${url.split(':')[1]}`
+    }
+
     return (
         <NodeCanvas {...canvas}/>
     );
