@@ -320,7 +320,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             let n = nr.current;
 
             let inputs: any[] = [];
-            let aggs: any = {};
+            let aggs: any = null;
             n.anchorRefs.forEach((ar: any) => {
 
                 let a: AnchorProp = ar.current.props;
