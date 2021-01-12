@@ -1,11 +1,5 @@
 import React from "react";
-
-interface NodeControlProps {
-    name: string;
-    index: number;
-    parent: any;
-    value: any;
-}
+import NodeControlProps from "../../../Props/NodeControlProps";
 
 abstract class NodeControl extends React.Component<NodeControlProps, any> {
     public name: string;

@@ -10,6 +10,7 @@ import TextControl from "./Controls/TextControl";
 import Tooltip from "react-bootstrap/Tooltip";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import PasswordControl from "./Controls/PasswordControl";
+import SelectControl from "./Controls/SelectControl";
 
 class AnchorPoint extends React.Component<AnchorProp, any> {
     public ref: any;
@@ -17,6 +18,10 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
     constructor(props: AnchorProp) {
         super(props);
         this.ref = React.createRef();
+
+        this.state = {
+            lines: this.props.lines
+        }
     }
 
     public updateLines = () => {
@@ -39,21 +44,35 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
     }
 
     public addLine = (line: SVGLineProp) => {
-        this.props.lines.push(line);
+        console.log("Adding line to anchor");
+        let tmp = this.state.lines;
+        tmp.push(line);
+        this.setState({lines: tmp});
+    }
+
+    public deleteLine = (line: SVGLineProp) => {
+        console.log("Deleting line from anchor");
+        let tmp = this.state.lines.map((l: SVGLineProp) => l);
+        tmp.forEach((l: SVGLineProp) => {
+            console.log(line);
+            console.log(l);
+            console.log(l.x1 !== line.x1 && l.x2 !== line.x2 && l.y1 !== line.y1 && l.y2 !== line.y2)
+        });
+        // console.log(tmp);
+        tmp = tmp.filter((l: SVGLineProp) => l.x1 !== line.x1 && l.x2 !== line.x2 && l.y1 !== line.y1 && l.y2 !== line.y2);
+        console.log(tmp);
+        this.setState({lines: []});
+        console.log(this.state.lines);
     }
 
     public canConnect = (a: AnchorPoint): boolean => {
-        if (this.props.type === "input") {
-            return a.props.type === "output";
-        } else if (this.props.type === "output") {
-            return a.props.type === "input";
-        } else if (this.props.type === "agg_input") {
-            return a.props.type === "agg_output";
-        } else if (this.props.type === "agg_output") {
-            return a.props.type === "agg_input";
+        if (["input", "agg_input"].includes(this.props.type) && this.props.lines.length >= 1) {
+            return false;
+        } else if (["input", "agg_input"].includes(a.props.type) && a.props.lines.length >= 1) {
+            return false;
         }
 
-        return false;
+        return a.props.accepts.includes(this.props.type) && this.props.accepts.includes(a.props.type);
     }
 
 }
@@ -73,7 +92,7 @@ class InputTemplate extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_input_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}></div>
+                    }}/>
                 </OverlayTrigger>
             </div>
         );
@@ -95,7 +114,7 @@ class OutputTemplate extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_output_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}></div>
+                    }}/>
                 </OverlayTrigger>
             </div>
         );
@@ -117,7 +136,7 @@ class AggInput extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_agginput_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}></div>
+                    }}/>
                 </OverlayTrigger>
             </div>
         );
@@ -139,7 +158,7 @@ class AggOutput extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_output_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}></div>
+                    }}/>
                 </OverlayTrigger>
             </div>
         );
@@ -186,7 +205,6 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                            anchorClickCallback={props.anchorClickCallback}
                            key={"input_anchor_" + id}
                            canvas={props.canvas}
-                           type={"input"}
                            parent={this}/>);
 
         this.outputs = [];
@@ -197,7 +215,6 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                             anchorClickCallback={props.anchorClickCallback}
                             key={"output_anchor_" + id}
                             canvas={props.canvas}
-                            type={"output"}
                             parent={this}/>);
 
         this.agg_inputs = [];
@@ -208,7 +225,6 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                       anchorClickCallback={props.anchorClickCallback}
                       key={"extras_anchor_" + id}
                       canvas={props.canvas}
-                      type={"agg_input"}
                       parent={this}/>);
 
         this.agg_outputs = [];
@@ -219,7 +235,6 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                        anchorClickCallback={props.anchorClickCallback}
                        key={"extras_anchor_" + id}
                        canvas={props.canvas}
-                       type={"agg_output"}
                        parent={this}/>);
 
         this.controls = [];
@@ -244,7 +259,17 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                         parent={this}
 
                     />
-                }else{
+                } else if (control.type === "select") {
+                    return <SelectControl
+                        name={control.name}
+                        value={control.value}
+                        options={control.options}
+                        ref={this.setControlRef()}
+                        index={this.controlRefs.length - 1}
+                        key={"control_" + id}
+                        parent={this}
+                    />
+                } else {
                     return null;
                 }
             }
@@ -276,6 +301,26 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
         this.anchorRefs.forEach((a: any) => {
             a.current.updateLines();
         })
+    }
+
+    deleteLines = () => {
+        //encontrar todas las lineas que salen de este nodo
+        //ir a los nodos conectados, linea por linea, decirles que borren esa linea
+        this.anchorRefs.forEach((a: any) => {
+            a.current.props.lines.forEach((l: SVGLineProp) => {
+                console.log(l.anchorOne?.parent);
+                l.anchorOne?.parent.deleteLine(l);
+                console.log(l.anchorTwo?.parent);
+                l.anchorTwo?.parent.deleteLine(l);
+            })
+        });
+    }
+
+    deleteLine = (line: SVGLineProp) => {
+        console.log("Deleting line from node");
+        this.anchorRefs.forEach((a: any) => {
+            a.current.deleteLine(line);
+        });
     }
 
     icon(class_name: string) {
@@ -340,13 +385,13 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
 
                 <ContextMenu id={`contextemenu_${this.props.index}`}>
                     <MenuItem data={{foo: 'bar'}} onClick={() => {
-                        alert("Eliminar")
+                        this.props.deleteNode(this);
                     }}>
                         Eliminar
                     </MenuItem>
                     <MenuItem divider/>
                     <MenuItem data={{foo: 'bar'}} onClick={() => {
-                        alert("Información")
+                        alert(this.props.info);
                     }}>
                         <Icon.HelpCircle/>Información
                     </MenuItem>

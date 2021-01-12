@@ -4,7 +4,7 @@ import AnchorProp from "../../../Props/AnchorProp";
 class Source_CSV_Node extends NodeProps {
     constructor(x: number, y: number) {
         super(x, y, "Fuente CSV", "csvsource", "source");
-        this.outputs = [new AnchorProp("DataFrame", this)];
+        this.outputs = [new AnchorProp("output", ["input"], "DataFrame", this)];
         this.controls = [{
             type: "text",
             value: "",

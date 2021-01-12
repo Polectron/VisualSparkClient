@@ -14,7 +14,7 @@ class TextControl extends NodeControl {
     render() {
         return (
             <div id={"nd_extra"}>
-                <input type={"text"} value={this.state.value} onChange={this.handleInputChange}/>
+                <input type={"text"} value={this.state.value} onChange={this.handleInputChange} placeholder={this.name}/>
             </div>
         );
     }

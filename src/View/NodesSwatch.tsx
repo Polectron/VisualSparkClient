@@ -14,6 +14,7 @@ import Max from "./Nodes/Aggregations/Max";
 import Source_JDBC_Node from "./Nodes/Sources/SourceJDBC";
 import GroupBy from "./Nodes/Aggregations/GroupBy";
 import Subtract from "./Nodes/Filters/Subtract";
+import Source_MongoDB_Node from "./Nodes/Sources/SourceMongoDB";
 
 function NodeButton(props: any) {
     return <Button style={{margin: "10px"}} variant={props.class}
@@ -66,6 +67,10 @@ class NodesSwatch extends React.Component<any, any> {
                     icon: <Icon.Database/>,
                     name: "Fuente JDBC",
                     data: {newNode: () => new Source_JDBC_Node(0, 0), onAdd: null}
+                }, {
+                    icon: <Icon.Database/>,
+                    name: "Fuente MongoDB",
+                    data: {newNode: () => new Source_MongoDB_Node(0, 0), onAdd: null}
                 }]
             },
             {

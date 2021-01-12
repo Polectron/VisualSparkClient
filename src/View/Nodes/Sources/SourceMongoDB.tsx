@@ -1,16 +1,11 @@
 import NodeProps from "../../../Props/NodeProp";
 import AnchorProp from "../../../Props/AnchorProp";
 
-class Source_JDBC_Node extends NodeProps {
+class Source_MongoDB_Node extends NodeProps {
     constructor(x: number, y: number) {
-        super(x, y, "Fuente JDBC", "jdbcsource", "source");
+        super(x, y, "Fuente MongoDB", "mongodbsource", "source");
         this.outputs = [new AnchorProp("output", ["input"], "DataFrame", this)];
         this.controls = [{
-            type: "select",
-            value: "",
-            name: "driver",
-            options: [{"name": "MySQL", "value": "mysql"}, {"name": "PostgreSQL", "value": "postgresql"}]
-        }, {
             type: "text",
             value: "",
             name: "url"
@@ -32,8 +27,8 @@ class Source_JDBC_Node extends NodeProps {
             name: "password"
         }];
 
-        this.info = "Obtén información de una fuente compatible con el conector JDBC";
+        this.info = "Obtén información de una base de datos de MongoDB";
     }
 }
 
-export default Source_JDBC_Node;
+export default Source_MongoDB_Node;

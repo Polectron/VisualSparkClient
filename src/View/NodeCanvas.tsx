@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, useState, useEffect} from 'react';
 import SVGCanvas from "./SVG/SVGCanvas";
 import SVGLineProp from "../Props/SVGLineProp";
 import NodeTemplate from "./Nodes/NodeTemplate";
@@ -14,6 +14,7 @@ import * as Icon from "react-feather";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Card from "react-bootstrap/Card";
+import Alert from "react-bootstrap/Alert";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import SettingsModal from "./Modals/SettingsModal";
@@ -37,11 +38,43 @@ interface NodeCanvasState {
     modalShow: boolean,
     modalQueriesShow: boolean,
     sparkServer: string,
-    sparkLimit: number,
     savedQueries: string[],
     expandedOutputs: any,
     outputsIcon: any,
-    outputsColSize: number
+    outputsColSize: number,
+    alerts: any[]
+}
+
+function AutoDismisableAlerts(props: any) {
+    const [visibleAlert, setAlertVisible] = useState(false); //--> init state
+
+    const handleVisible = () => { //---> Last State for Alert
+        setAlertVisible(true)
+        setTimeout(() => { //---> 2 seconds later which is closing
+            handleClose()
+        }, 5000);
+    }
+
+    useEffect(() => {
+            handleVisible();  //---> This is for Alert message
+    }, []);
+
+    function handleClose(){
+        setAlertVisible(false);
+        props.destroyAlert(props.id);
+    }
+
+    if (visibleAlert) {
+        return (
+            <Alert variant="danger" onClose={() => handleClose()} dismissible>
+                <Alert.Heading>{props.title}</Alert.Heading>
+                <p>
+                    {props.body}
+                </p>
+            </Alert>
+        );
+    }
+    return <></>;
 }
 
 class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
@@ -65,10 +98,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         if (sparkServer === null) {
             sparkServer = ""
         }
-        let sparkLimit = Number(localStorage.getItem("sparkLimit"));
-        if (sparkLimit === null) {
-            sparkLimit = 1000
-        }
+
         let savedQueriesjson = localStorage.getItem("savedQueries");
         if (savedQueriesjson === null) {
             savedQueriesjson = '[{"name":"Example 1", "img": "No-image-available.png", "tree": {}},' +
@@ -95,17 +125,29 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             modalShow: false,
             modalQueriesShow: false,
             sparkServer: sparkServer,
-            sparkLimit: sparkLimit,
             savedQueries: savedQueries,
             expandedOutputs: "d-lg-block",
             outputsColSize: 3,
-            outputsIcon: <Icon.ArrowLeft/>
+            outputsIcon: <Icon.ArrowLeft/>,
+            alerts: []
         }
 
     }
 
     componentDidMount = () => {
         this.connectWebSocket();
+    }
+
+    addAlert = (title: string, body: string) => {
+        let tmp = this.state.alerts;
+        tmp.push(<AutoDismisableAlerts destroyAlert={this.destroyAlert} id={tmp.length} title={title} body={body}/>);
+        this.setState({alerts: tmp});
+    }
+
+    destroyAlert = (id: number) => {
+        let tmp = this.state.alerts;
+        tmp[id] = undefined;
+        this.setState({alerts: tmp});
     }
 
     connectWebSocket = () => {
@@ -131,6 +173,8 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             let data = JSON.parse(e["data"]);
             if (data["type"] === "table") {
                 this.loadTable(data["id"], data["data"]);
+            } else if (data["type"] === "error") {
+                this.addAlert(data["title"], data["data"]);
             }
         };
 
@@ -171,18 +215,17 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
 
     onSettingsSave = (data: any) => {
         this.setState({canExecute: false, executeVariant: "secondary", ...data});
-        localStorage.setItem("sparkLimit", data.sparkLimit);
         localStorage.setItem("sparkServer", data.sparkServer);
     }
 
     runCode = () => {
         let nodes = this.serializeQuery();
         this.clearOutputs();
-        this.websocket.send(JSON.stringify({action: "query", nodes: nodes, limit: this.state.sparkLimit}));
+        this.websocket.send(JSON.stringify({action: "query", nodes: nodes}));
     }
 
     clearOutputs = () => {
-        this.tableRefs.forEach((t)=>{
+        this.tableRefs.forEach((t) => {
             t.current.clear();
         });
     }
@@ -214,7 +257,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
             let anchor1 = this.nodeRefs[anchors[0].parent.props.index].current.getAnchorRef(anchors[0].index).current;
             let anchor2 = this.nodeRefs[anchors[1].parent.props.index].current.getAnchorRef(anchors[1].index).current;
 
-            if(!anchor1.canConnect(anchor2)){
+            if (!anchor1.canConnect(anchor2)) {
                 this.breakSVGLine();
                 return;
             }
@@ -273,7 +316,34 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         node.anchorClickCallback = this.handleAnchorClick;
         this.nodeRefs.push(React.createRef());
         let id = this.nodeRefs.length - 1;
-        return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}/>;
+        return <NodeTemplate {...node} ref={this.nodeRefs[id]} key={"node_" + id} index={id} canvas={this.ref}
+                             deleteNode={this.deleteNode}/>;
+    }
+
+    private deleteNode = (n: any) => {
+        let tmp: any[] = this.state.nodes.map(node => node);
+
+        tmp[n.props.index] = undefined;
+        this.nodeRefs[n.props.index] = undefined;
+
+        let tmpLines = this.state.lines;
+
+        n.anchorRefs.forEach((ar: any) => {
+            let a: AnchorProp = ar.current.props;
+            tmpLines = tmpLines.filter((l) => !a.lines.includes(l));
+            n.deleteLines();
+            // a.lines.forEach((l) => {
+            //     if(l.anchorOne !== null && l.anchorTwo !== null) {
+            //         l.anchorOne.lines = l.anchorOne.lines.filter((l) => !a.lines.includes(l));
+            //         l.anchorTwo.lines = l.anchorTwo.lines.filter((l) => !a.lines.includes(l));
+            //     }
+            // });
+        })
+
+        this.setState({
+            nodes: tmp,
+            lines: tmpLines
+        });
     }
 
     private addTable = (id: number) => {
@@ -316,7 +386,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
     serializeQuery = () => {
         let nodes: any[] = [];
 
-        this.nodeRefs.forEach((nr) => {
+        this.nodeRefs.forEach((nr: any) => {
             let n = nr.current;
 
             let inputs: any[] = [];
@@ -412,6 +482,11 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                 </div>
                 <Container>
                     <Row>
+                        <Col>
+                            {this.state.alerts}
+                        </Col>
+                    </Row>
+                    <Row>
                         <Col style={{marginBottom: "15px"}}>
                             <ButtonGroup aria-label="Basic example">
                                 <OverlayTrigger
@@ -459,7 +534,6 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                     </Row>
                 </Container>
                 <SettingsModal
-                    sparkLimit={this.state.sparkLimit}
                     sparkServer={this.state.sparkServer}
                     show={this.state.modalShow}
                     onHide={() => this.setState({modalShow: false})}

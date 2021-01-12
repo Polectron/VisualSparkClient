@@ -14,6 +14,8 @@ abstract class NodeProp{
     anchorClickCallback: any;
     canvas: any;
     title: string;
+    deleteNode: any;
+    info: string;
 
     protected constructor(x: number, y: number, title: string, ntype: string, nclass: string) {
         this.x = x;
@@ -28,6 +30,7 @@ abstract class NodeProp{
         this.controls = [];
         this.index = -1;
         this.canvas = null;
+        this.info = "";
     }
 
 }

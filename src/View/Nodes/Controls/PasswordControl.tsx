@@ -14,7 +14,7 @@ class PasswordControl extends NodeControl {
     render() {
         return (
             <div id={"nd_extra"}>
-                <input type={"password"} value={this.state.value} onChange={this.handleInputChange}/>
+                <input type={"password"} value={this.state.value} onChange={this.handleInputChange} placeholder={this.name}/>
             </div>
         );
     }
