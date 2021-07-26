@@ -1,9 +1,9 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from "react-draggable";
 import * as Icon from "react-feather";
 import AnchorProp from "../../Props/AnchorProp";
-import {ContextMenu, MenuItem, showMenu} from "react-contextmenu";
+import { ContextMenu, MenuItem, showMenu } from "react-contextmenu";
 import NodeProp from "../../Props/NodeProp";
 import SVGLineProp from "../../Props/SVGLineProp";
 import TextControl from "./Controls/TextControl";
@@ -11,6 +11,8 @@ import Tooltip from "react-bootstrap/Tooltip";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import PasswordControl from "./Controls/PasswordControl";
 import SelectControl from "./Controls/SelectControl";
+import TagsControl from "./Controls/TagsControl";
+import NumberControl from './Controls/NumberControl';
 
 class AnchorPoint extends React.Component<AnchorProp, any> {
     public ref: any;
@@ -20,7 +22,7 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
         this.ref = React.createRef();
 
         this.state = {
-            lines: this.props.lines
+            lines: [...this.props.lines]
         }
     }
 
@@ -29,7 +31,7 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
         let anchorBounds = ReactDOM.findDOMNode(this).getBoundingClientRect();
         let canvasBounds = this.props.canvas.current.getBoundingClientRect();
 
-        this.props.lines.forEach((l) => {
+        this.state.lines.forEach((l: SVGLineProp) => {
             let x = anchorBounds.left - canvasBounds.left + 10;
             let y = anchorBounds.top - canvasBounds.top + 10;
 
@@ -44,31 +46,28 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
     }
 
     public addLine = (line: SVGLineProp) => {
-        console.log("Adding line to anchor");
+        // console.log("Adding line to anchor");
         let tmp = this.state.lines;
         tmp.push(line);
-        this.setState({lines: tmp});
+        this.setState({ lines: tmp });
     }
 
     public deleteLine = (line: SVGLineProp) => {
-        console.log("Deleting line from anchor");
-        let tmp = this.state.lines.map((l: SVGLineProp) => l);
-        tmp.forEach((l: SVGLineProp) => {
-            console.log(line);
-            console.log(l);
-            console.log(l.x1 !== line.x1 && l.x2 !== line.x2 && l.y1 !== line.y1 && l.y2 !== line.y2)
-        });
+        // console.log("Deleting line from anchor");
+        let tmp = [...this.state.lines];
         // console.log(tmp);
-        tmp = tmp.filter((l: SVGLineProp) => l.x1 !== line.x1 && l.x2 !== line.x2 && l.y1 !== line.y1 && l.y2 !== line.y2);
-        console.log(tmp);
-        this.setState({lines: []});
-        console.log(this.state.lines);
+        tmp = tmp.filter((l: SVGLineProp) => l !== line);
+        // console.log(tmp);
+        this.setState({ lines: tmp });
+        // console.log(this.state.lines);
     }
 
     public canConnect = (a: AnchorPoint): boolean => {
-        if (["input", "agg_input"].includes(this.props.type) && this.props.lines.length >= 1) {
+        // console.log(this.state.lines);
+        // console.log(a.state.lines);
+        if (["input"].includes(this.props.type) && this.state.lines.length >= 1) {
             return false;
-        } else if (["input", "agg_input"].includes(a.props.type) && a.props.lines.length >= 1) {
+        } else if (["input"].includes(a.props.type) && a.state.lines.length >= 1) {
             return false;
         }
 
@@ -82,7 +81,7 @@ class InputTemplate extends AnchorPoint {
         return (
             <div className="nd_input">
                 <OverlayTrigger
-                    delay={{show: 350, hide: 300}}
+                    delay={{ show: 350, hide: 300 }}
                     placement={"top"}
                     overlay={
                         <Tooltip id={`tooltip-top`}>
@@ -92,7 +91,7 @@ class InputTemplate extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_input_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}/>
+                    }} />
                 </OverlayTrigger>
             </div>
         );
@@ -104,7 +103,7 @@ class OutputTemplate extends AnchorPoint {
         return (
             <div className="nd_output">
                 <OverlayTrigger
-                    delay={{show: 350, hide: 300}}
+                    delay={{ show: 350, hide: 300 }}
                     placement={"top"}
                     overlay={
                         <Tooltip id={`tooltip-top`}>
@@ -114,7 +113,7 @@ class OutputTemplate extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_output_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}/>
+                    }} />
                 </OverlayTrigger>
             </div>
         );
@@ -126,7 +125,7 @@ class AggInput extends AnchorPoint {
         return (
             <div className="nd_agginput">
                 <OverlayTrigger
-                    delay={{show: 350, hide: 300}}
+                    delay={{ show: 350, hide: 300 }}
                     placement={"top"}
                     overlay={
                         <Tooltip id={`tooltip-top`}>
@@ -136,7 +135,7 @@ class AggInput extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_agginput_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}/>
+                    }} />
                 </OverlayTrigger>
             </div>
         );
@@ -148,7 +147,7 @@ class AggOutput extends AnchorPoint {
         return (
             <div className="nd_output">
                 <OverlayTrigger
-                    delay={{show: 350, hide: 300}}
+                    delay={{ show: 350, hide: 300 }}
                     placement={"top"}
                     overlay={
                         <Tooltip id={`tooltip-top`}>
@@ -158,7 +157,7 @@ class AggOutput extends AnchorPoint {
                 >
                     <div ref={this.ref} className="nd_output_anchor" onClick={() => {
                         this.props.anchorClickCallback(this.props, this.ref.current)
-                    }}/>
+                    }} />
                 </OverlayTrigger>
             </div>
         );
@@ -179,8 +178,9 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     private controls: JSX.Element[];
     private class: string;
     private type: string;
-    private anchorRefs: any;
+    anchorRefs: any;
     private controlRefs: any;
+    onDelete: any;
 
     constructor(props: NodeProp) {
         super(props);
@@ -200,80 +200,103 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
         this.inputs = [];
         this.inputs = props.inputs.map((input, id) =>
             <InputTemplate {...input}
-                           ref={this.setAnchorRef()}
-                           index={this.anchorRefs.length - 1}
-                           anchorClickCallback={props.anchorClickCallback}
-                           key={"input_anchor_" + id}
-                           canvas={props.canvas}
-                           parent={this}/>);
+                ref={this.setAnchorRef()}
+                index={this.anchorRefs.length - 1}
+                anchorClickCallback={props.anchorClickCallback}
+                key={"input_anchor_" + id}
+                canvas={props.canvas}
+                parent={this} />);
 
         this.outputs = [];
         this.outputs = props.outputs.map((output, id) =>
             <OutputTemplate {...output}
-                            ref={this.setAnchorRef()}
-                            index={this.anchorRefs.length - 1}
-                            anchorClickCallback={props.anchorClickCallback}
-                            key={"output_anchor_" + id}
-                            canvas={props.canvas}
-                            parent={this}/>);
+                ref={this.setAnchorRef()}
+                index={this.anchorRefs.length - 1}
+                anchorClickCallback={props.anchorClickCallback}
+                key={"output_anchor_" + id}
+                canvas={props.canvas}
+                parent={this} />);
 
         this.agg_inputs = [];
         this.agg_inputs = props.agg_inputs.map((extra, id) =>
             <AggInput {...extra}
-                      ref={this.setAnchorRef()}
-                      index={this.anchorRefs.length - 1}
-                      anchorClickCallback={props.anchorClickCallback}
-                      key={"extras_anchor_" + id}
-                      canvas={props.canvas}
-                      parent={this}/>);
+                ref={this.setAnchorRef()}
+                index={this.anchorRefs.length - 1}
+                anchorClickCallback={props.anchorClickCallback}
+                key={"extras_anchor_" + id}
+                canvas={props.canvas}
+                parent={this} />);
 
         this.agg_outputs = [];
         this.agg_outputs = props.agg_outputs.map((extra, id) =>
             <AggOutput {...extra}
-                       ref={this.setAnchorRef()}
-                       index={this.anchorRefs.length - 1}
-                       anchorClickCallback={props.anchorClickCallback}
-                       key={"extras_anchor_" + id}
-                       canvas={props.canvas}
-                       parent={this}/>);
+                ref={this.setAnchorRef()}
+                index={this.anchorRefs.length - 1}
+                anchorClickCallback={props.anchorClickCallback}
+                key={"extras_anchor_" + id}
+                canvas={props.canvas}
+                parent={this} />);
 
         this.controls = [];
         this.controls = props.controls.map((control: any, id: number) => {
-                if (control.type === "text") {
-                    return <TextControl
-                        name={control.name}
-                        value={control.value}
-                        ref={this.setControlRef()}
-                        index={this.controlRefs.length - 1}
-                        key={"control_" + id}
-                        parent={this}
+            if (control.type === "text") {
+                return <TextControl
+                    name={control.name}
+                    value={control.value}
+                    ref={this.setControlRef()}
+                    index={this.controlRefs.length - 1}
+                    key={"control_" + id}
+                    parent={this}
 
-                    />
-                } else if (control.type === "password") {
-                    return <PasswordControl
-                        name={control.name}
-                        value={control.value}
-                        ref={this.setControlRef()}
-                        index={this.controlRefs.length - 1}
-                        key={"control_" + id}
-                        parent={this}
+                />
+            } else if (control.type === "number") {
+                return <NumberControl
+                    name={control.name}
+                    value={control.value}
+                    ref={this.setControlRef()}
+                    index={this.controlRefs.length - 1}
+                    key={"control_" + id}
+                    parent={this}
+                    min={control.min}
+                    max={control.max}
 
-                    />
-                } else if (control.type === "select") {
-                    return <SelectControl
-                        name={control.name}
-                        value={control.value}
-                        options={control.options}
-                        ref={this.setControlRef()}
-                        index={this.controlRefs.length - 1}
-                        key={"control_" + id}
-                        parent={this}
-                    />
-                } else {
-                    return null;
-                }
+                />
+            } else if (control.type === "password") {
+                return <PasswordControl
+                    name={control.name}
+                    value={control.value}
+                    ref={this.setControlRef()}
+                    index={this.controlRefs.length - 1}
+                    key={"control_" + id}
+                    parent={this}
+
+                />
+            } else if (control.type === "select") {
+                return <SelectControl
+                    name={control.name}
+                    value={control.value}
+                    options={control.options}
+                    ref={this.setControlRef()}
+                    index={this.controlRefs.length - 1}
+                    key={"control_" + id}
+                    parent={this}
+                />
+            } else if (control.type === "tags") {
+                return <TagsControl
+                    name={control.name}
+                    value={control.value}
+                    options={control.options}
+                    ref={this.setControlRef()}
+                    index={this.controlRefs.length - 1}
+                    key={"control_" + id}
+                    parent={this}
+                />
+            } else {
+                return null;
             }
+        }
         );
+        this.onDelete = props.onDelete;
     }
 
     setAnchorRef = (): any => {
@@ -307,10 +330,10 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
         //encontrar todas las lineas que salen de este nodo
         //ir a los nodos conectados, linea por linea, decirles que borren esa linea
         this.anchorRefs.forEach((a: any) => {
-            a.current.props.lines.forEach((l: SVGLineProp) => {
-                console.log(l.anchorOne?.parent);
+            a.current.state.lines.forEach((l: SVGLineProp) => {
+                // console.log(l.anchorOne?.parent);
                 l.anchorOne?.parent.deleteLine(l);
-                console.log(l.anchorTwo?.parent);
+                // console.log(l.anchorTwo?.parent);
                 l.anchorTwo?.parent.deleteLine(l);
             })
         });
@@ -319,16 +342,18 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     deleteLine = (line: SVGLineProp) => {
         console.log("Deleting line from node");
         this.anchorRefs.forEach((a: any) => {
-            a.current.deleteLine(line);
+            if (a.current) {
+                a.current.deleteLine(line);
+            }
         });
     }
 
     icon(class_name: string) {
         switch (class_name) {
             case "source":
-                return <Icon.Database/>;
+                return <Icon.Database />;
             case "filter":
-                return <Icon.Filter/>;
+                return <Icon.Filter />;
         }
     }
 
@@ -336,7 +361,7 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
         e.preventDefault();
 
         let showMenuConfig = {
-            position: {x: e.pageX, y: e.pageY},
+            position: { x: e.pageX, y: e.pageY },
             target: null,
             id: `contextemenu_${this.props.index}`
         };
@@ -354,8 +379,8 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                 <Draggable
                     bounds="parent"
                     onDrag={this.handleDrag}
-                    defaultPosition={{x: this.state.x, y: this.state.y}}>
-                    <div id={"node"} className={`node_block ${this.class}`} onContextMenu={this.handleClick}>
+                    defaultPosition={{ x: this.state.x, y: this.state.y }}>
+                    <div id={"node"} className={`ignore_scroll node_block ${this.class}`} onContextMenu={this.handleClick}>
                         <div>
                             <div className="nd_container">
                                 <div className="nd_inputs">
@@ -384,23 +409,22 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
                 </Draggable>
 
                 <ContextMenu id={`contextemenu_${this.props.index}`}>
-                    <MenuItem data={{foo: 'bar'}} onClick={() => {
+                    <MenuItem onClick={() => {
                         this.props.deleteNode(this);
                     }}>
-                        Eliminar
+                        <Icon.Trash /> Eliminar
                     </MenuItem>
-                    <MenuItem divider/>
-                    <MenuItem data={{foo: 'bar'}} onClick={() => {
-                        alert(this.props.info);
-                    }}>
-                        <Icon.HelpCircle/>Información
+                    <MenuItem divider />
+                    <MenuItem data={{ foo: 'bar' }} onClick={
+                        () => { this.props.showInfoModal(this.props) }
+                    }>
+                        <Icon.HelpCircle /> Información
                     </MenuItem>
                 </ContextMenu>
 
             </>
         );
     }
-
 }
 
 export default NodeTemplate;
