@@ -1,6 +1,6 @@
 import AnchorProp from "./AnchorProp";
 
-abstract class NodeProp{
+abstract class NodeProp {
     x: number;
     y: number;
     type: string;
@@ -15,6 +15,8 @@ abstract class NodeProp{
     canvas: any;
     title: string;
     deleteNode: any;
+    onDelete: any;
+    showInfoModal: any;
     info: string;
 
     protected constructor(x: number, y: number, title: string, ntype: string, nclass: string) {
