@@ -9,8 +9,11 @@ type SVGCanvasProp = {
 
 function SVGCanvas(prop : SVGCanvasProp){
 
-    var lines = [];
-    lines = prop.lines.map(l => <SVGLine {...l}/>);
+    var lines: JSX.Element[] = [];
+    prop.lines.forEach((lineProp) => {
+        let id = lines.length;
+        lines.push(<SVGLine {...lineProp} key={"line_" + id}/>)
+    })
 
     return (
         <svg onMouseMove={(e)=>e.preventDefault()} onClick={prop.breakSVGLine} id={"svg_canvas"}>
