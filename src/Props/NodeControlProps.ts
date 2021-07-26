@@ -4,7 +4,8 @@ interface NodeControlProps {
     parent: any;
     value: any;
     options?: any;
+    min?: any;
+    max?: any;
 }
-
 
 export default NodeControlProps;
