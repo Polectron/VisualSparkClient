@@ -1,12 +1,12 @@
 import NodeProp from "../../../Props/NodeProp";
 import AnchorProp from "../../../Props/AnchorProp";
 
-class Sum extends NodeProp {
+class Count extends NodeProp {
     constructor(x: number, y: number) {
-        super(x, y, "Suma", "sum", "aggr");
+        super(x, y, "Contar", "count", "aggr");
         this.agg_outputs = [new AnchorProp("agg_output", ["agg_input"], "DataFrame", this)];
         this.controls = [{type: "text", value: "", name: "column"}];
     }
 }
 
-export default Sum;
+export default Count;

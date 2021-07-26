@@ -6,7 +6,7 @@ class GroupBy extends NodeProp {
         super(x, y, "Agrupar", "groupby", "aggr");
         this.inputs = [new AnchorProp("input", ["output"], "DataFrame", this)];
         this.outputs = [new AnchorProp("group", ["input"], "DataFrame", this)];
-        this.controls = [{type: "text", value: "", name: "columns"}];
+        this.controls = [{type: "tags", value: "", name: "columns"}];
     }
 }
 
