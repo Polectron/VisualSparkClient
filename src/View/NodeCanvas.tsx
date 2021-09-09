@@ -26,6 +26,7 @@ import MapOutput from "./Outputs/MapOutput";
 import CounterOutput from "./Outputs/CounterOutput";
 import TableOutput from "./Outputs/TableOutput";
 import _ from "lodash";
+import GraphOutput from './Outputs/GraphOutput';
 
 interface NodeCanvasState {
     selectedAnchors: any[],
@@ -432,6 +433,17 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
         this.setState({outputs: tmp});
     }
 
+    private addGraph = (id: number) => {
+        // console.log("Adding output for node " + id);
+        let tmp: any[] = this.state.outputs.map(o => o);
+
+        this.outputRefs[id] = React.createRef();
+
+        tmp.push(<GraphOutput ref={this.outputRefs[id]} id={id}/>);
+
+        this.setState({outputs: tmp});
+    }
+
     private addCounter = (id: number) => {
         // console.log("Adding output for node " + id);
         let tmp: any[] = this.state.outputs.map(o => o);
@@ -621,7 +633,7 @@ class NodeCanvas extends Component<NodeCanvasProp, NodeCanvasState> {
                         <Col className={"d-none " + this.state.expandedOutputs} lg={2}>
                             <Row>
                                 <Col>
-                                    <NodesSwatch addNode={this.addNode} addTable={this.addTable} addMap={this.addMap} addCounter={this.addCounter} deleteOutput={this.deleteOutput}/>
+                                    <NodesSwatch addNode={this.addNode} addTable={this.addTable} addMap={this.addMap} addCounter={this.addCounter} addGraph={this.addGraph} deleteOutput={this.deleteOutput}/>
                                 </Col>
                             </Row>
                         </Col>

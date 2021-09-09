@@ -21,6 +21,7 @@ import Select from "./Nodes/Filters/Select";
 import MapNode from "./Nodes/Outputs/MapNode";
 import Sample from "./Nodes/Filters/Sample";
 import CounterNode from "./Nodes/Outputs/CounterNode";
+import GraphNode from "./Nodes/Outputs/GraphNode";
 
 function NodeButton(props: any) {
     return <Button style={{ margin: "10px" }} variant={props.class}
@@ -147,7 +148,7 @@ class NodesSwatch extends React.Component<any, any> {
                 class: "output",
                 buttons: [
                     {
-                        icon: <Icon.BarChart2 />,
+                        icon: <Icon.Columns />,
                         name: "Tabla",
                         data: {
                             newNode: () => new TableNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
@@ -161,6 +162,15 @@ class NodesSwatch extends React.Component<any, any> {
                         data: {
                             newNode: () => new MapNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
                                 props.addMap(id)
+                            }
+                        }
+                    },
+                    {
+                        icon: <Icon.BarChart2 />,
+                        name: "Gráficas",
+                        data: {
+                            newNode: () => new GraphNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
+                                props.addGraph(id)
                             }
                         }
                     },
