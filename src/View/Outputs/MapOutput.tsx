@@ -1,5 +1,5 @@
 import React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { Map, TileLayer, Marker, Popup } from 'react-leaflet'
 import { colorMarker } from "./MapMarkers/MapMarkers";
 
 class MapOutput extends React.Component<any, any> {
@@ -32,13 +32,13 @@ class MapOutput extends React.Component<any, any> {
         return (
             <div className={"elevation"}>
                 <h5>Map {this.props.id}</h5>
-                <MapContainer center={this.state.center} zoom={9} scrollWheelZoom={false}>
+                <Map center={this.state.center} zoom={9} scrollWheelZoom={false}>
                     <TileLayer
                         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     {this.state.markers.map((x: any)=>{return <Marker icon={colorMarker(this.state.color)} position={[x.lat, x.lon]}><Popup>{x.popup}</Popup></Marker>})}
-                </MapContainer>
+                </Map>
             </div>
         );
     }
