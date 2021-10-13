@@ -11,8 +11,6 @@ class CounterOutput extends React.Component<any, any> {
         }
     }
 
-
-
     setCount = (count: number) => {
         this.setState({value: count});
     }

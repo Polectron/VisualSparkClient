@@ -18,6 +18,9 @@ abstract class NodeProp {
     onDelete: any;
     showInfoModal: any;
     info: string;
+    outputRef: any;
+    buildOutput: any;
+    loadData: any;
 
     protected constructor(x: number, y: number, title: string, ntype: string, nclass: string) {
         this.x = x;
@@ -33,7 +36,12 @@ abstract class NodeProp {
         this.index = -1;
         this.canvas = null;
         this.info = "";
+        this.buildOutput = null;
+        this.loadData = null;
+        this.outputRef = null;
     }
+
+    getOutput = () => {return this.outputRef};
 
 }
 

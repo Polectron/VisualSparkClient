@@ -47,7 +47,7 @@ class AnchorPoint extends React.Component<AnchorProp, any> {
 
     public addLine = (line: SVGLineProp) => {
         // console.log("Adding line to anchor");
-        let tmp = this.state.lines;
+        let tmp = [...this.state.lines];
         tmp.push(line);
         this.setState({ lines: tmp });
     }
@@ -178,9 +178,11 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     private controls: JSX.Element[];
     private class: string;
     private type: string;
-    anchorRefs: any;
+    public anchorRefs: any;
     private controlRefs: any;
     onDelete: any;
+    loadData: any;
+    outputRef: any;
 
     constructor(props: NodeProp) {
         super(props);
@@ -297,6 +299,7 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
         }
         );
         this.onDelete = props.onDelete;
+        this.loadData = props.loadData;
     }
 
     setAnchorRef = (): any => {
@@ -340,7 +343,6 @@ class NodeTemplate extends Component<NodeProp, NodeTemplateSate> {
     }
 
     deleteLine = (line: SVGLineProp) => {
-        console.log("Deleting line from node");
         this.anchorRefs.forEach((a: any) => {
             if (a.current) {
                 a.current.deleteLine(line);

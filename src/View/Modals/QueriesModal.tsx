@@ -15,10 +15,10 @@ function QueryCard(props: any){
                 <Card.Body>
                     <Row>
                         <Col>
-                            <Button onClick={()=>{alert("Abriendo: "+JSON.stringify(props))}} variant="primary">Abrir</Button>
+                            <Button onClick={()=>{props.openSavedQuery(props.id, props.closeModal)}} variant="primary">Abrir</Button>
                         </Col>
                         <Col>
-                            <Button onClick={()=>{alert("Eliminando: "+JSON.stringify(props))}} variant="danger">Eliminar</Button>
+                            <Button onClick={()=>{props.deleteSavedQuery(props.id)}} variant="danger">Eliminar</Button>
                         </Col>
                     </Row>
                 </Card.Body>
@@ -30,8 +30,8 @@ function QueryCard(props: any){
 class QueriesModal extends React.Component<any, any> {
 
     renderQueries = () => {
-        let queries = this.props.savedQueries.map(
-            (x: any, id: any)=>{return (<QueryCard {...x} key={"query_"+id}/>);}
+        let queries = this.props.savedqueries.map(
+            (query: any, id: number)=>{return (<QueryCard {...query} id={id} deleteSavedQuery={this.props.deleteSavedQuery} openSavedQuery={this.props.openSavedQuery} closeModal={this.props.onHide} key={"query_"+id}/>);}
         );
         return queries;
     }

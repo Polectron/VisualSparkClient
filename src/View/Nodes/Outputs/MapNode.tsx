@@ -1,8 +1,12 @@
 import NodeProp from "../../../Props/NodeProp";
 import AnchorProp from "../../../Props/AnchorProp";
+import NodeCanvas from "../../NodeCanvas";
+import React from "react";
+import MapOutput from "../../Outputs/MapOutput";
+import _ from "lodash";
 
 class MapNode extends NodeProp {
-    constructor(x: number, y: number, onDelete: any) {
+    constructor(x: number, y: number) {
         super(x, y, "Mapa", "map", "output");
         this.inputs = [new AnchorProp("input", ["output"], "DataFrame", this)];
         this.controls = [
@@ -19,7 +23,20 @@ class MapNode extends NodeProp {
                 { "name": "Grey", "value": "grey" },
                 { "name": "Black", "value": "black" }
             ] }];
-        this.onDelete = onDelete;
+        this.onDelete = (canvas: NodeCanvas) => {canvas.deleteOutput(this.index)};
+    }
+
+    buildOutput = () => {
+        this.outputRef = React.createRef();
+        return <MapOutput ref={this.outputRef} id={this.index} />
+    }
+
+    loadData = (data: any) => {
+        let map: MapOutput = this.outputRef.current;
+        map.setColor(data["color"]);
+        data["data"].forEach((m: any) => {
+            map.addMarker({ lat: _.get(m, data["latitude"]), lon: _.get(m, data["longitude"]), popup: JSON.stringify(m, null, 4) });
+        })
     }
 }
 

@@ -2,26 +2,7 @@ import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import * as Icon from "react-feather";
 import React from "react";
-import Source_CSV_Node from "./Nodes/Sources/SourceCSV";
-import TableNode from "./Nodes/Outputs/TableNode";
-import Filter from "./Nodes/Filters/Filter";
-import Aggregation from "./Nodes/Aggregations/Aggregation";
-import Count from "./Nodes/Aggregations/Count";
-import Sum from "./Nodes/Aggregations/Sum";
-import Avg from "./Nodes/Aggregations/Avg";
-import Min from "./Nodes/Aggregations/Min";
-import Max from "./Nodes/Aggregations/Max";
-import Source_JDBC_Node from "./Nodes/Sources/SourceJDBC";
-import GroupBy from "./Nodes/Aggregations/GroupBy";
-import Subtract from "./Nodes/Filters/Subtract";
-import Source_MongoDB_Node from "./Nodes/Sources/SourceMongoDB";
 import Accordion from "react-bootstrap/Accordion";
-import Limit from "./Nodes/Filters/Limit";
-import Select from "./Nodes/Filters/Select";
-import MapNode from "./Nodes/Outputs/MapNode";
-import Sample from "./Nodes/Filters/Sample";
-import CounterNode from "./Nodes/Outputs/CounterNode";
-import GraphNode from "./Nodes/Outputs/GraphNode";
 
 function NodeButton(props: any) {
     return <Button style={{ margin: "10px" }} variant={props.class}
@@ -33,9 +14,9 @@ class NodesCard extends React.Component<any, any> {
 
     constructor(props: any) {
         super(props);
-        this.buttons = props.buttons.map((b: any) => <NodeButton icon={b.icon} name={b.name} class={props.class}
+        this.buttons = props.buttons.map((b: any) => <NodeButton key={b.name} icon={b.icon} name={b.name} class={props.class}
             onClick={() => {
-                props.addNode(b.data)
+                props.addNode(props.buildNode(b.type, 0, 0));
             }} />);
     }
 
@@ -69,15 +50,15 @@ class NodesSwatch extends React.Component<any, any> {
                 name: "Fuentes", class: "source", buttons: [{
                     icon: <Icon.File />,
                     name: "Fuente CSV",
-                    data: { newNode: () => new Source_CSV_Node(0, 0), onAdd: null }
+                    type: "csvsource"
                 }, {
                     icon: <Icon.Database />,
                     name: "Fuente JDBC",
-                    data: { newNode: () => new Source_JDBC_Node(0, 0), onAdd: null }
+                    type: "jdbcsource"
                 }, {
                     icon: <Icon.Database />,
                     name: "Fuente MongoDB",
-                    data: { newNode: () => new Source_MongoDB_Node(0, 0), onAdd: null }
+                    type: "mongodbsource"
                 }]
             },
             {
@@ -87,23 +68,23 @@ class NodesSwatch extends React.Component<any, any> {
                     {
                         icon: <Icon.Filter />,
                         name: "Filtro",
-                        data: { newNode: () => new Filter(0, 0), onAdd: null }
+                        type: "filter"
                     }, {
                         icon: <Icon.Crosshair />,
                         name: "Seleccionar",
-                        data: { newNode: () => new Select(0, 0), onAdd: null }
+                        type: "select"
                     }, {
                         icon: <Icon.Crop />,
                         name: "Límite",
-                        data: { newNode: () => new Limit(0, 0), onAdd: null }
+                        type: "limit"
                     }, {
                         icon: <Icon.Minus />,
                         name: "Sustraer",
-                        data: { newNode: () => new Subtract(0, 0), onAdd: null }
+                        type: "subtraction"
                     }, {
                         icon: <Icon.PieChart />,
                         name: "Muestra",
-                        data: { newNode: () => new Sample(0, 0), onAdd: null }
+                        type: "sample"
                     }
                 ]
             },
@@ -114,32 +95,32 @@ class NodesSwatch extends React.Component<any, any> {
                     {
                         icon: <Icon.List />,
                         name: "Agrupar",
-                        data: { newNode: () => new GroupBy(0, 0), onAdd: null }
+                        type: "groupby"
                     },
                     {
                         icon: <Icon.Circle />,
                         name: "Agregación",
-                        data: { newNode: () => new Aggregation(0, 0), onAdd: null }
+                        type: "aggregation"
                     }, {
                         icon: <Icon.Plus />,
                         name: "Contar",
-                        data: { newNode: () => new Count(0, 0), onAdd: null }
+                        type: "count"
                     }, {
                         icon: <Icon.Plus />,
                         name: "Suma",
-                        data: { newNode: () => new Sum(0, 0), onAdd: null }
+                        type: "sum"
                     }, {
                         icon: <Icon.Divide />,
                         name: "Media",
-                        data: { newNode: () => new Avg(0, 0), onAdd: null }
+                        type: "avg"
                     }, {
                         icon: <Icon.Minimize />,
                         name: "Mínimo",
-                        data: { newNode: () => new Min(0, 0), onAdd: null }
+                        type: "min"
                     }, {
                         icon: <Icon.Maximize />,
                         name: "Máximo",
-                        data: { newNode: () => new Max(0, 0), onAdd: null }
+                        type: "max"
                     }
                 ]
             },
@@ -150,45 +131,29 @@ class NodesSwatch extends React.Component<any, any> {
                     {
                         icon: <Icon.Columns />,
                         name: "Tabla",
-                        data: {
-                            newNode: () => new TableNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
-                                props.addTable(id)
-                            }
-                        }
+                        type: "table"
                     },
                     {
                         icon: <Icon.Map />,
                         name: "Mapa",
-                        data: {
-                            newNode: () => new MapNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
-                                props.addMap(id)
-                            }
-                        }
+                        type: "map"
                     },
                     {
                         icon: <Icon.BarChart2 />,
                         name: "Gráficas",
-                        data: {
-                            newNode: () => new GraphNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
-                                props.addGraph(id)
-                            }
-                        }
+                        type: "graph"
                     },
                     {
                         icon: <Icon.Hash />,
                         name: "Contador",
-                        data: {
-                            newNode: () => new CounterNode(0, 0, props.deleteOutput), onAdd: (id: number) => {
-                                props.addCounter(id)
-                            }
-                        }
+                        type: "counter"
                     }
                 ]
             }
         ];
 
         this.buttonCards = this.buttons.map((b, id) => <NodesCard class={b.class} {...b} key={id} eventKey={`${id}`}
-            addNode={props.addNode} />);
+            addNode={props.addNode} buildNode={props.buildNode} />);
     }
 
 
