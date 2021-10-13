@@ -41,7 +41,7 @@ import Sum from './Nodes/Aggregations/Sum';
 import Avg from './Nodes/Aggregations/Avg';
 import Min from './Nodes/Aggregations/Min';
 import Max from './Nodes/Aggregations/Max';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 interface NodeCanvasState {
     selectedAnchors: any[],
